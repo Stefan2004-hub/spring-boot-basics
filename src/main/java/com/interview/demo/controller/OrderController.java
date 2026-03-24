@@ -3,6 +3,7 @@ package com.interview.demo.controller;
 import com.interview.demo.dto.order.CreateOrderRequest;
 import com.interview.demo.dto.order.OrderResponse;
 import com.interview.demo.service.OrderService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,7 +19,7 @@ public class OrderController {
   }
 
   @PostMapping
-  public OrderResponse createOrder(@RequestBody CreateOrderRequest request) {
+  public OrderResponse createOrder(@Valid @RequestBody CreateOrderRequest request) {
     return orderService.createOrder(request);
   }
 }

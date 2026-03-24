@@ -4,6 +4,7 @@ import com.interview.demo.dto.ProductDTO;
 import com.interview.demo.dto.ProductResponse;
 import com.interview.demo.repository.projection.ProductSummary;
 import com.interview.demo.service.ProductService;
+import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,7 +48,7 @@ public class ProductController {
   }
 
   @PostMapping
-  public ProductResponse createProduct(@RequestBody ProductDTO product) {
+  public ProductResponse createProduct(@Valid @RequestBody ProductDTO product) {
     return productService.saveProduct(product);
   }
 }

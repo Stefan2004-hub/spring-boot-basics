@@ -3,6 +3,7 @@ package com.interview.demo.controller;
 import com.interview.demo.dto.CategoryResponse;
 import com.interview.demo.dto.CreateCategoryRequest;
 import com.interview.demo.service.CategoryService;
+import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,7 +26,7 @@ public class CategoryController {
   }
 
   @PostMapping
-  public CategoryResponse createCategory(@RequestBody CreateCategoryRequest request) {
+  public CategoryResponse createCategory(@Valid @RequestBody CreateCategoryRequest request) {
     return categoryService.createCategory(request);
   }
 }

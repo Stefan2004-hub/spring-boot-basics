@@ -184,6 +184,49 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .andExpect(jsonPath("$.error").value("Product not found: 999999"));
   }
 
+  @Test
+  void shouldReturnBadRequestForInvalidCategoryPayload() throws Exception {
+    mockMvc
+        .perform(post("/categories").contentType("application/json").content("{\"name\":\"\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("Category name is required"));
+  }
+
+  @Test
+  void shouldReturnBadRequestForInvalidProductPayload() throws Exception {
+    mockMvc
+        .perform(
+            post("/products")
+                .contentType("application/json")
+                .content(
+                    """
+                    {
+                      "name": "Laptop Pro",
+                      "description": "Powerful laptop",
+                      "categoryId": 1
+                    }
+                    """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("Product price is required"));
+  }
+
+  @Test
+  void shouldReturnBadRequestForInvalidOrderPayload() throws Exception {
+    mockMvc
+        .perform(
+            post("/orders")
+                .contentType("application/json")
+                .content(
+                    """
+                    {
+                      "customerName": "Alice",
+                      "items": []
+                    }
+                    """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("Order must contain at least one item"));
+  }
+
   private Product product(String name, BigDecimal price) {
     Product product = new Product();
     product.setName(name);
