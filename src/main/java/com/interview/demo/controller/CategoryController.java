@@ -1,8 +1,10 @@
 package com.interview.demo.controller;
 
+import com.interview.demo.dto.CategoryResponse;
 import com.interview.demo.dto.CreateCategoryRequest;
-import com.interview.demo.entity.Category;
 import com.interview.demo.service.CategoryService;
+import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,8 +19,13 @@ public class CategoryController {
     this.categoryService = categoryService;
   }
 
+  @GetMapping
+  public List<CategoryResponse> getAllCategories() {
+    return categoryService.getAllCategories();
+  }
+
   @PostMapping
-  public Category createCategory(@RequestBody CreateCategoryRequest request) {
+  public CategoryResponse createCategory(@RequestBody CreateCategoryRequest request) {
     return categoryService.createCategory(request);
   }
 }

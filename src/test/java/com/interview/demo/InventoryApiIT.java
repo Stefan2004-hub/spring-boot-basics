@@ -40,12 +40,27 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .perform(post("/categories").contentType("application/json").content("{\"name\":\"Electronics\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").exists())
-        .andExpect(jsonPath("$.name").value("Electronics"));
+        .andExpect(jsonPath("$.name").value("Electronics"))
+        .andExpect(jsonPath("$.products").doesNotExist());
 
     mockMvc
         .perform(post("/categories").contentType("application/json").content("{\"name\":\"Electronics\"}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("Category already exists: Electronics"));
+  }
+
+  @Test
+  void shouldGetAllCategories() throws Exception {
+    categoryRepository.save(new Category(null, "Electronics"));
+    categoryRepository.save(new Category(null, "Books"));
+
+    mockMvc
+        .perform(get("/categories"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(2))
+        .andExpect(jsonPath("$[0].id").exists())
+        .andExpect(jsonPath("$[0].name").exists())
+        .andExpect(jsonPath("$[0].products").doesNotExist());
   }
 
   @Test

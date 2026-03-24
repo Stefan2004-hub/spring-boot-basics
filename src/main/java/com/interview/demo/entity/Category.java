@@ -1,6 +1,5 @@
 package com.interview.demo.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -19,7 +18,6 @@ public class Category {
 
   private String name;
 
-  @JsonIgnore
   @OneToMany(mappedBy = "category")
   private List<Product> products = new ArrayList<>();
 
