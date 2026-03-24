@@ -5,7 +5,6 @@ import com.interview.demo.dto.ProductResponse;
 import com.interview.demo.entity.Category;
 import com.interview.demo.entity.Product;
 import com.interview.demo.exception.ResourceNotFoundException;
-import com.interview.demo.repository.CategoryRepository;
 import com.interview.demo.repository.ProductRepository;
 import com.interview.demo.repository.projection.ProductSummary;
 import com.interview.demo.repository.specification.ProductSpecifications;
@@ -19,12 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ProductService {
   private final ProductRepository productRepository;
-  private final CategoryRepository categoryRepository;
+  private final CategoryService categoryService;
 
-  public ProductService(
-      ProductRepository productRepository, CategoryRepository categoryRepository) {
+  public ProductService(ProductRepository productRepository, CategoryService categoryService) {
     this.productRepository = productRepository;
-    this.categoryRepository = categoryRepository;
+    this.categoryService = categoryService;
   }
 
   @Transactional(readOnly = true)
@@ -44,12 +42,7 @@ public class ProductService {
     newProduct.setDescription(product.description());
     newProduct.setPrice(product.price());
     if (product.categoryId() != null) {
-      Category category =
-          categoryRepository
-              .findById(product.categoryId())
-              .orElseThrow(
-                  () ->
-                      new ResourceNotFoundException("Category not found: " + product.categoryId()));
+      Category category = categoryService.getById(product.categoryId());
       newProduct.setCategory(category);
     }
     return toResponse(productRepository.save(newProduct));

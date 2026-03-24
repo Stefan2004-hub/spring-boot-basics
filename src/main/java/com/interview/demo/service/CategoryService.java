@@ -4,6 +4,7 @@ import com.interview.demo.dto.CategoryResponse;
 import com.interview.demo.dto.CreateCategoryRequest;
 import com.interview.demo.entity.Category;
 import com.interview.demo.exception.ConflictException;
+import com.interview.demo.exception.ResourceNotFoundException;
 import com.interview.demo.exception.ValidationException;
 import com.interview.demo.repository.CategoryRepository;
 import java.util.List;
@@ -25,9 +26,10 @@ public class CategoryService {
     }
     categoryRepository
         .findByNameIgnoreCase(request.name())
-        .ifPresent(existing -> {
-          throw new ConflictException("Category already exists: " + request.name());
-    });
+        .ifPresent(
+            existing -> {
+              throw new ConflictException("Category already exists: " + request.name());
+            });
     Category category = new Category();
     category.setName(request.name().trim());
     return toResponse(categoryRepository.save(category));
@@ -40,5 +42,11 @@ public class CategoryService {
 
   private CategoryResponse toResponse(Category category) {
     return new CategoryResponse(category.getId(), category.getName());
+  }
+
+  public Category getById(Long id) {
+    return categoryRepository
+        .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
   }
 }
