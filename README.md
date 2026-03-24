@@ -1,46 +1,41 @@
 # Inventory & Order API Service
 
-A Spring Boot REST API for products, categories, and orders, backed by PostgreSQL and Spring Data JPA.
-This project is intentionally compact and interview-friendly: it demonstrates layered architecture (`controller -> service -> repository`), advanced JPA querying, projections, specifications, and transactional order writes.
+Spring Boot REST API for categories, products, and orders, backed by PostgreSQL, JPA, and Flyway.
 
 ## Tech Stack
 
 - Java 21
 - Spring Boot 3.5.12-SNAPSHOT
-- Spring Web (REST API)
+- Spring Web
 - Spring Data JPA
-- Flyway
+- Spring Validation (`jakarta.validation`)
+- Flyway (schema migrations)
 - PostgreSQL
+- Testcontainers (integration tests)
 - Maven Wrapper (`./mvnw`)
 
 ## Architecture Overview
 
-Request flow is organized by responsibility:
+Layered structure:
 
-- `ProductController` exposes HTTP endpoints under `/products` (including specification search and projection endpoints).
-- `CategoryController` exposes `/categories`.
-- `OrderController` exposes `/orders`.
-- `ProductService` contains application logic and DTO-to-entity mapping.
-- `OrderService` shows `@Transactional` parent-child persistence for `Order` + `OrderItem`.
-- `ProductRepository` extends `JpaRepository<Product, Long>` + `JpaSpecificationExecutor<Product>`.
-- Domain entities: `Product`, `Category`, `Order`, `OrderItem`.
+- Controllers expose REST routes (`/categories`, `/products`, `/orders`).
+- Services implement validation and business logic.
+- Repositories handle persistence and query logic.
+- DTOs separate request/response contracts from entities.
 
-Data input for creation is modeled via `ProductDTO`:
+Main domain entities:
 
-```json
-{
-  "name": "string",
-  "description": "string",
-  "price": 19.99
-}
-```
+- `Category`
+- `Product`
+- `Order`
+- `OrderItem`
 
 ## Getting Started
 
 ### Prerequisites
 
 - Java 21
-- Docker (for PostgreSQL via Compose)
+- Docker (for local PostgreSQL and integration tests)
 
 ### 1) Start PostgreSQL
 
@@ -48,7 +43,7 @@ Data input for creation is modeled via `ProductDTO`:
 docker compose up -d
 ```
 
-### 2) Compile the project
+### 2) Compile
 
 ```bash
 ./mvnw -q -DskipTests compile
@@ -60,34 +55,43 @@ docker compose up -d
 ./mvnw spring-boot:run
 ```
 
-The API will be available at `http://localhost:8080`.
+API base URL: `http://localhost:8080`
 
-## Database Configuration Note
+## Database Notes
 
-Schema is managed by Flyway migrations in `src/main/resources/db/migration` and Hibernate DDL auto-update is disabled (`spring.jpa.hibernate.ddl-auto=validate`).
+- PostgreSQL connection defaults are in `src/main/resources/application.properties`.
+- Schema is managed by Flyway migrations in `src/main/resources/db/migration`.
+- Hibernate DDL auto mode is `validate`.
 
 ## API Reference
 
-### Get all products
+### Categories
 
-```http
-GET /products
-```
-
-Example:
+#### `GET /categories`
 
 ```bash
-curl -X GET http://localhost:8080/products
+curl http://localhost:8080/categories
 ```
 
-### Create product
+#### `POST /categories`
 
-```http
-POST /products
-Content-Type: application/json
+```bash
+curl -X POST http://localhost:8080/categories \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Electronics"}'
 ```
 
-Example:
+### Products
+
+#### `GET /products`
+
+```bash
+curl http://localhost:8080/products
+```
+
+#### `POST /products`
+
+`categoryId` is optional.
 
 ```bash
 curl -X POST http://localhost:8080/products \
@@ -95,18 +99,81 @@ curl -X POST http://localhost:8080/products \
   -d '{
     "name": "Keyboard",
     "description": "Mechanical keyboard",
-    "price": 89.99
+    "price": 89.99,
+    "categoryId": 1
   }'
 ```
 
-Example response:
+#### `GET /products/by-category/{categoryName}`
+
+```bash
+curl http://localhost:8080/products/by-category/Electronics
+```
+
+#### `GET /products/search?name=&minPrice=&maxPrice=`
+
+```bash
+curl "http://localhost:8080/products/search?name=laptop&minPrice=1000&maxPrice=2000"
+```
+
+#### `GET /products/summaries`
+
+```bash
+curl http://localhost:8080/products/summaries
+```
+
+### Orders
+
+#### `POST /orders`
+
+```bash
+curl -X POST http://localhost:8080/orders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerName": "Alice",
+    "items": [
+      {"productId": 1, "quantity": 2},
+      {"productId": 2, "quantity": 1}
+    ]
+  }'
+```
+
+#### `GET /orders/{id}/items`
+
+Returns order items for the given order id, including `productName`.
+
+```bash
+curl http://localhost:8080/orders/1/items
+```
+
+## Validation and Error Handling
+
+Validation is enforced through bean validation and service-level checks.
+
+Common error response shape:
 
 ```json
 {
-  "id": 1,
-  "name": "Keyboard",
-  "description": "Mechanical keyboard",
-  "price": 89.99
+  "error": "..."
+}
+```
+
+Typical status codes:
+
+- `400 Bad Request` for validation errors
+- `404 Not Found` for missing resources (e.g. missing product/order/category)
+- `409 Conflict` for business conflicts (e.g. duplicate category)
+- `500 Internal Server Error` for unexpected failures
+
+Example `404`:
+
+```bash
+curl http://localhost:8080/orders/999999/items
+```
+
+```json
+{
+  "error": "Order not found: 999999"
 }
 ```
 
@@ -118,11 +185,18 @@ Run all tests:
 ./mvnw test
 ```
 
-Current tests validate:
+Notes:
 
-- Spring context startup
-- `POST /products` creation flow
-- `GET /products` endpoint availability
+- Integration tests use Testcontainers with PostgreSQL.
+- Docker must be available when running integration tests.
+
+## HTTP Request Collections
+
+Ready-to-run request files:
+
+- `src/httpreq/Category.http`
+- `src/httpreq/Products.http`
+- `src/httpreq/Order.http`
 
 ## Project Structure
 
@@ -137,15 +211,17 @@ src/
       dto/
     resources/
       application.properties
+      db/migration/
   test/
     java/com/interview/demo/
   httpreq/
+    Category.http
     Products.http
+    Order.http
 ```
 
-## Known Limitations and Next Improvements
+## Current Limitations
 
-- Input validation is not yet enforced on request payloads.
-- Update/delete endpoints are not exposed in the controller.
-- Error response modeling is minimal (no standardized API error contract).
-- Pagination/filtering is not implemented for product listing.
+- No update/delete endpoints for categories, products, or orders.
+- No pagination on product listing/search endpoints.
+- Error payload is intentionally minimal (`{ "error": "..." }`).
