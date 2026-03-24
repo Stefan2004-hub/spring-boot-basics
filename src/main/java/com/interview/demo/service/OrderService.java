@@ -8,10 +8,8 @@ import com.interview.demo.entity.Order;
 import com.interview.demo.entity.OrderItem;
 import com.interview.demo.entity.OrderStatus;
 import com.interview.demo.entity.Product;
-import com.interview.demo.exception.ResourceNotFoundException;
 import com.interview.demo.exception.ValidationException;
 import com.interview.demo.repository.OrderRepository;
-import com.interview.demo.repository.ProductRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -21,11 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class OrderService {
   private final OrderRepository orderRepository;
-  private final ProductRepository productRepository;
+  private final ProductService productService;
 
-  public OrderService(OrderRepository orderRepository, ProductRepository productRepository) {
+  public OrderService(OrderRepository orderRepository, ProductService productService) {
     this.orderRepository = orderRepository;
-    this.productRepository = productRepository;
+    this.productService = productService;
   }
 
   @Transactional
@@ -44,18 +42,13 @@ public class OrderService {
 
     BigDecimal totalAmount = BigDecimal.ZERO;
     for (CreateOrderItemRequest itemRequest : request.items()) {
-      Product product =
-          productRepository
-              .findById(itemRequest.productId())
-              .orElseThrow(
-                  () ->
-                      new ResourceNotFoundException(
-                          "Product not found: " + itemRequest.productId()));
+      Product product = productService.getById(itemRequest.productId());
       if (itemRequest.quantity() == null || itemRequest.quantity() <= 0) {
         throw new ValidationException("Quantity must be greater than 0");
       }
 
-      BigDecimal lineTotal = product.getPrice().multiply(BigDecimal.valueOf(itemRequest.quantity()));
+      BigDecimal lineTotal =
+          product.getPrice().multiply(BigDecimal.valueOf(itemRequest.quantity()));
       OrderItem item = new OrderItem();
       item.setProduct(product);
       item.setQuantity(itemRequest.quantity());
@@ -86,6 +79,11 @@ public class OrderService {
                         item.getLineTotal()))
             .toList();
     return new OrderResponse(
-        order.getId(), order.getCustomerName(), order.getStatus(), order.getTotalAmount(), order.getCreatedAt(), items);
+        order.getId(),
+        order.getCustomerName(),
+        order.getStatus(),
+        order.getTotalAmount(),
+        order.getCreatedAt(),
+        items);
   }
 }

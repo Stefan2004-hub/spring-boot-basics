@@ -49,8 +49,7 @@ public class ProductService {
               .findById(product.categoryId())
               .orElseThrow(
                   () ->
-                      new ResourceNotFoundException(
-                          "Category not found: " + product.categoryId()));
+                      new ResourceNotFoundException("Category not found: " + product.categoryId()));
       newProduct.setCategory(category);
     }
     return toResponse(productRepository.save(newProduct));
@@ -92,5 +91,11 @@ public class ProductService {
         product.getPrice(),
         categoryId,
         categoryName);
+  }
+
+  public Product getById(Long productId) {
+    return productRepository
+        .findById(productId)
+        .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productId));
   }
 }
