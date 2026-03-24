@@ -32,8 +32,10 @@ class ProductRepositoryIT extends PostgresContainerTestBase {
   void shouldFindProductsByCategoryNameUsingJoinQuery() {
     Category electronics = categoryRepository.save(new Category(null, "Electronics"));
     Category books = categoryRepository.save(new Category(null, "Books"));
-    productRepository.save(product("Laptop", "Work laptop", new BigDecimal("1499.99"), electronics));
-    productRepository.save(product("Mouse", "Wireless mouse", new BigDecimal("29.99"), electronics));
+    productRepository.save(
+        product("Laptop", "Work laptop", new BigDecimal("1499.99"), electronics));
+    productRepository.save(
+        product("Mouse", "Wireless mouse", new BigDecimal("29.99"), electronics));
     productRepository.save(product("Novel", "Book", new BigDecimal("19.99"), books));
 
     List<Product> products = productRepository.findByCategoryName("electronics");
@@ -49,7 +51,7 @@ class ProductRepositoryIT extends PostgresContainerTestBase {
     productRepository.save(product("Gaming Mouse", "C", new BigDecimal("80.00"), null));
 
     Specification<Product> spec =
-        Specification.where(ProductSpecifications.nameContains("laptop"))
+        ProductSpecifications.nameContains("laptop")
             .and(ProductSpecifications.priceGte(new BigDecimal("1000.00")))
             .and(ProductSpecifications.priceLte(new BigDecimal("1700.00")));
 
@@ -67,7 +69,9 @@ class ProductRepositoryIT extends PostgresContainerTestBase {
     List<ProductSummary> summaries = productRepository.findAllProjectedBy();
 
     assertThat(summaries).extracting(ProductSummary::getName).contains("Monitor", "Keyboard");
-    assertThat(summaries).extracting(ProductSummary::getPrice).contains(new BigDecimal("299.99"), new BigDecimal("89.99"));
+    assertThat(summaries)
+        .extracting(ProductSummary::getPrice)
+        .contains(new BigDecimal("299.99"), new BigDecimal("89.99"));
   }
 
   private Product product(String name, String description, BigDecimal price, Category category) {

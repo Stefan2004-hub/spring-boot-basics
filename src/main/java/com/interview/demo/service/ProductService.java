@@ -20,7 +20,8 @@ public class ProductService {
   private final ProductRepository productRepository;
   private final CategoryRepository categoryRepository;
 
-  public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository) {
+  public ProductService(
+      ProductRepository productRepository, CategoryRepository categoryRepository) {
     this.productRepository = productRepository;
     this.categoryRepository = categoryRepository;
   }
@@ -45,7 +46,9 @@ public class ProductService {
       Category category =
           categoryRepository
               .findById(product.categoryId())
-              .orElseThrow(() -> new IllegalArgumentException("Category not found: " + product.categoryId()));
+              .orElseThrow(
+                  () ->
+                      new IllegalArgumentException("Category not found: " + product.categoryId()));
       newProduct.setCategory(category);
     }
     return toResponse(productRepository.save(newProduct));
@@ -53,13 +56,16 @@ public class ProductService {
 
   @Transactional(readOnly = true)
   public List<ProductResponse> findByCategoryName(String categoryName) {
-    return productRepository.findByCategoryName(categoryName).stream().map(this::toResponse).toList();
+    return productRepository.findByCategoryName(categoryName).stream()
+        .map(this::toResponse)
+        .toList();
   }
 
   @Transactional(readOnly = true)
-  public List<ProductResponse> searchProducts(String name, BigDecimal minPrice, BigDecimal maxPrice) {
+  public List<ProductResponse> searchProducts(
+      String name, BigDecimal minPrice, BigDecimal maxPrice) {
     Specification<Product> spec =
-        Specification.where(ProductSpecifications.nameContains(name))
+        ProductSpecifications.nameContains(name)
             .and(ProductSpecifications.priceGte(minPrice))
             .and(ProductSpecifications.priceLte(maxPrice));
     return productRepository.findAll(spec).stream().map(this::toResponse).toList();
@@ -78,6 +84,11 @@ public class ProductService {
     Long categoryId = category != null ? category.getId() : null;
     String categoryName = category != null ? category.getName() : null;
     return new ProductResponse(
-        product.getId(), product.getName(), product.getDescription(), product.getPrice(), categoryId, categoryName);
+        product.getId(),
+        product.getName(),
+        product.getDescription(),
+        product.getPrice(),
+        categoryId,
+        categoryName);
   }
 }
