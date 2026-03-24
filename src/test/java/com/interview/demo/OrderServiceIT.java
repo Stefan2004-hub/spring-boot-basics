@@ -12,6 +12,7 @@ import com.interview.demo.repository.ProductRepository;
 import com.interview.demo.service.OrderService;
 import com.interview.demo.support.PostgresContainerTestBase;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,7 @@ class OrderServiceIT extends PostgresContainerTestBase {
     assertThat(response.id()).isNotNull();
     assertThat(response.items()).hasSize(2);
     assertThat(response.totalAmount()).isEqualByComparingTo("3150.00");
+    assertThat(response.createdAt()).isEqualTo(LocalDate.now());
     assertThat(orderRepository.count()).isEqualTo(1);
     assertThat(countOrderItems()).isEqualTo(2);
   }

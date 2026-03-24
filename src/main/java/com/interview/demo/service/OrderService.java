@@ -11,7 +11,7 @@ import com.interview.demo.entity.Product;
 import com.interview.demo.repository.OrderRepository;
 import com.interview.demo.repository.ProductRepository;
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +38,7 @@ public class OrderService {
     Order order = new Order();
     order.setCustomerName(request.customerName().trim());
     order.setStatus(OrderStatus.CREATED);
-    order.setCreatedAt(OffsetDateTime.now());
+    order.setCreatedAt(LocalDate.now());
 
     BigDecimal totalAmount = BigDecimal.ZERO;
     for (CreateOrderItemRequest itemRequest : request.items()) {
