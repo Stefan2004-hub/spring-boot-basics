@@ -11,14 +11,6 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:8080/categories
-Content-Type: application/json
-
-{
-  "name": "Electronics"
-}
-
-###
 GET http://localhost:8080/products/by-category/Electronics
 
 ###
@@ -26,15 +18,3 @@ GET http://localhost:8080/products/search?name=prod&minPrice=10&maxPrice=100
 
 ###
 GET http://localhost:8080/products/summaries
-
-###
-POST http://localhost:8080/orders
-Content-Type: application/json
-
-{
-  "customerName": "Alice",
-  "items": [
-    { "productId": 1, "quantity": 2 },
-    { "productId": 2, "quantity": 1 }
-  ]
-}

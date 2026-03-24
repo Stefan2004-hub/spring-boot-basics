@@ -4,15 +4,18 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+@SuppressWarnings("resource")
 public abstract class PostgresContainerTestBase {
-  static final PostgreSQLContainer<?> POSTGRES =
-      new PostgreSQLContainer<>("postgres:17.3-alpine")
-          .withDatabaseName("demo_test")
-          .withUsername("test")
-          .withPassword("test");
+  static final PostgreSQLContainer<?> POSTGRES;
 
   static {
+    POSTGRES =
+        new PostgreSQLContainer<>("postgres:17.3-alpine")
+            .withDatabaseName("demo_test")
+            .withUsername("test")
+            .withPassword("test");
     POSTGRES.start();
+    Runtime.getRuntime().addShutdownHook(new Thread(POSTGRES::close));
   }
 
   @DynamicPropertySource
