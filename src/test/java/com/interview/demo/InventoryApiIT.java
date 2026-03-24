@@ -142,7 +142,8 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .andExpect(jsonPath("$.totalAmount").value(250.00))
         .andExpect(jsonPath("$.createdAt").exists())
         .andExpect(jsonPath("$.createdAt").value(org.hamcrest.Matchers.matchesRegex("\\d{4}-\\d{2}-\\d{2}")))
-        .andExpect(jsonPath("$.items.length()").value(2));
+        .andExpect(jsonPath("$.items.length()").value(2))
+        .andExpect(jsonPath("$.items[0].order").doesNotExist());
   }
 
   private Product product(String name, BigDecimal price) {
