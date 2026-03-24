@@ -3,6 +3,8 @@ package com.interview.demo.service;
 import com.interview.demo.dto.CategoryResponse;
 import com.interview.demo.dto.CreateCategoryRequest;
 import com.interview.demo.entity.Category;
+import com.interview.demo.exception.ConflictException;
+import com.interview.demo.exception.ValidationException;
 import com.interview.demo.repository.CategoryRepository;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -19,12 +21,12 @@ public class CategoryService {
   @Transactional
   public CategoryResponse createCategory(CreateCategoryRequest request) {
     if (request.name() == null || request.name().isBlank()) {
-      throw new IllegalArgumentException("Category name is required");
+      throw new ValidationException("Category name is required");
     }
     categoryRepository
         .findByNameIgnoreCase(request.name())
         .ifPresent(existing -> {
-          throw new IllegalArgumentException("Category already exists: " + request.name());
+          throw new ConflictException("Category already exists: " + request.name());
     });
     Category category = new Category();
     category.setName(request.name().trim());

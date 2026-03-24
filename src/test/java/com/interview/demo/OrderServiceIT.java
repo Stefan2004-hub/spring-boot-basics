@@ -7,6 +7,7 @@ import com.interview.demo.dto.order.CreateOrderItemRequest;
 import com.interview.demo.dto.order.CreateOrderRequest;
 import com.interview.demo.dto.order.OrderResponse;
 import com.interview.demo.entity.Product;
+import com.interview.demo.exception.ResourceNotFoundException;
 import com.interview.demo.repository.OrderRepository;
 import com.interview.demo.repository.ProductRepository;
 import com.interview.demo.service.OrderService;
@@ -64,7 +65,7 @@ class OrderServiceIT extends PostgresContainerTestBase {
             List.of(new CreateOrderItemRequest(laptop.getId(), 1), new CreateOrderItemRequest(missingProductId, 1)));
 
     assertThatThrownBy(() -> orderService.createOrder(request))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Product not found");
 
     assertThat(orderRepository.count()).isZero();

@@ -45,7 +45,7 @@ class InventoryApiIT extends PostgresContainerTestBase {
 
     mockMvc
         .perform(post("/categories").contentType("application/json").content("{\"name\":\"Electronics\"}"))
-        .andExpect(status().isBadRequest())
+        .andExpect(status().isConflict())
         .andExpect(jsonPath("$.error").value("Category already exists: Electronics"));
   }
 
@@ -144,6 +144,44 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .andExpect(jsonPath("$.createdAt").value(org.hamcrest.Matchers.matchesRegex("\\d{4}-\\d{2}-\\d{2}")))
         .andExpect(jsonPath("$.items.length()").value(2))
         .andExpect(jsonPath("$.items[0].order").doesNotExist());
+  }
+
+  @Test
+  void shouldReturnNotFoundForMissingCategoryWhenCreatingProduct() throws Exception {
+    mockMvc
+        .perform(
+            post("/products")
+                .contentType("application/json")
+                .content(
+                    """
+                    {
+                      "name": "Laptop Pro",
+                      "description": "Powerful laptop",
+                      "price": 1999.99,
+                      "categoryId": 999999
+                    }
+                    """))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.error").value("Category not found: 999999"));
+  }
+
+  @Test
+  void shouldReturnNotFoundForMissingProductWhenCreatingOrder() throws Exception {
+    mockMvc
+        .perform(
+            post("/orders")
+                .contentType("application/json")
+                .content(
+                    """
+                    {
+                      "customerName": "Alice",
+                      "items": [
+                        {"productId": 999999, "quantity": 1}
+                      ]
+                    }
+                    """))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.error").value("Product not found: 999999"));
   }
 
   private Product product(String name, BigDecimal price) {

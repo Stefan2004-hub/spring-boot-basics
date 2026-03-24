@@ -4,6 +4,7 @@ import com.interview.demo.dto.ProductDTO;
 import com.interview.demo.dto.ProductResponse;
 import com.interview.demo.entity.Category;
 import com.interview.demo.entity.Product;
+import com.interview.demo.exception.ResourceNotFoundException;
 import com.interview.demo.repository.CategoryRepository;
 import com.interview.demo.repository.ProductRepository;
 import com.interview.demo.repository.projection.ProductSummary;
@@ -48,7 +49,8 @@ public class ProductService {
               .findById(product.categoryId())
               .orElseThrow(
                   () ->
-                      new IllegalArgumentException("Category not found: " + product.categoryId()));
+                      new ResourceNotFoundException(
+                          "Category not found: " + product.categoryId()));
       newProduct.setCategory(category);
     }
     return toResponse(productRepository.save(newProduct));

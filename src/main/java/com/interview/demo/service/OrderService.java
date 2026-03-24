@@ -8,6 +8,8 @@ import com.interview.demo.entity.Order;
 import com.interview.demo.entity.OrderItem;
 import com.interview.demo.entity.OrderStatus;
 import com.interview.demo.entity.Product;
+import com.interview.demo.exception.ResourceNotFoundException;
+import com.interview.demo.exception.ValidationException;
 import com.interview.demo.repository.OrderRepository;
 import com.interview.demo.repository.ProductRepository;
 import java.math.BigDecimal;
@@ -29,10 +31,10 @@ public class OrderService {
   @Transactional
   public OrderResponse createOrder(CreateOrderRequest request) {
     if (request.items() == null || request.items().isEmpty()) {
-      throw new IllegalArgumentException("Order must contain at least one item");
+      throw new ValidationException("Order must contain at least one item");
     }
     if (request.customerName() == null || request.customerName().isBlank()) {
-      throw new IllegalArgumentException("Customer name is required");
+      throw new ValidationException("Customer name is required");
     }
 
     Order order = new Order();
@@ -45,9 +47,12 @@ public class OrderService {
       Product product =
           productRepository
               .findById(itemRequest.productId())
-              .orElseThrow(() -> new IllegalArgumentException("Product not found: " + itemRequest.productId()));
+              .orElseThrow(
+                  () ->
+                      new ResourceNotFoundException(
+                          "Product not found: " + itemRequest.productId()));
       if (itemRequest.quantity() == null || itemRequest.quantity() <= 0) {
-        throw new IllegalArgumentException("Quantity must be greater than 0");
+        throw new ValidationException("Quantity must be greater than 0");
       }
 
       BigDecimal lineTotal = product.getPrice().multiply(BigDecimal.valueOf(itemRequest.quantity()));
