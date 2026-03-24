@@ -6,5 +6,35 @@ Content-Type: application/json
 {
   "name": "Product 1",
   "description": "Description of Product 1",
-  "price": 19.99
+  "price": 19.99,
+  "categoryId": 1
+}
+
+###
+POST http://localhost:8080/categories
+Content-Type: application/json
+
+{
+  "name": "Electronics"
+}
+
+###
+GET http://localhost:8080/products/by-category/Electronics
+
+###
+GET http://localhost:8080/products/search?name=prod&minPrice=10&maxPrice=100
+
+###
+GET http://localhost:8080/products/summaries
+
+###
+POST http://localhost:8080/orders
+Content-Type: application/json
+
+{
+  "customerName": "Alice",
+  "items": [
+    { "productId": 1, "quantity": 2 },
+    { "productId": 2, "quantity": 1 }
+  ]
 }

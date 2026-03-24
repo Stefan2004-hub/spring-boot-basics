@@ -1,3 +1,5 @@
 package com.interview.demo.dto;
 
-public record ProductDTO(String name, String description, Double price) {}
+import java.math.BigDecimal;
+
+public record ProductDTO(String name, String description, BigDecimal price, Long categoryId) {}

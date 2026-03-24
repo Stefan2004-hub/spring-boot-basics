@@ -1,9 +1,13 @@
 package com.interview.demo.entity;
 
+import java.math.BigDecimal;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity()
@@ -15,11 +19,15 @@ public class Product {
 
   private String name;
   private String description;
-  private Double price;
+  private BigDecimal price;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "category_id")
+  private Category category;
 
   public Product() {}
 
-  public Product(Long id, String name, String description, Double price) {
+  public Product(Long id, String name, String description, BigDecimal price) {
     this.id = id;
     this.name = name;
     this.description = description;
@@ -50,11 +58,19 @@ public class Product {
     this.description = description;
   }
 
-  public Double getPrice() {
+  public BigDecimal getPrice() {
     return price;
   }
 
-  public void setPrice(Double price) {
+  public void setPrice(BigDecimal price) {
     this.price = price;
+  }
+
+  public Category getCategory() {
+    return category;
+  }
+
+  public void setCategory(Category category) {
+    this.category = category;
   }
 }

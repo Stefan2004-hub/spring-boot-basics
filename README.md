@@ -1,7 +1,7 @@
-# Product API Service
+# Inventory & Order API Service
 
-A Spring Boot REST API for managing products, backed by PostgreSQL and Spring Data JPA.
-This project is intentionally compact and interview-friendly: the codebase demonstrates a clear layered architecture (`controller -> service -> repository`) with integration-style controller tests.
+A Spring Boot REST API for products, categories, and orders, backed by PostgreSQL and Spring Data JPA.
+This project is intentionally compact and interview-friendly: it demonstrates layered architecture (`controller -> service -> repository`), advanced JPA querying, projections, specifications, and transactional order writes.
 
 ## Tech Stack
 
@@ -9,6 +9,7 @@ This project is intentionally compact and interview-friendly: the codebase demon
 - Spring Boot 3.5.12-SNAPSHOT
 - Spring Web (REST API)
 - Spring Data JPA
+- Flyway
 - PostgreSQL
 - Maven Wrapper (`./mvnw`)
 
@@ -16,10 +17,13 @@ This project is intentionally compact and interview-friendly: the codebase demon
 
 Request flow is organized by responsibility:
 
-- `ProductController` exposes HTTP endpoints under `/products`.
+- `ProductController` exposes HTTP endpoints under `/products` (including specification search and projection endpoints).
+- `CategoryController` exposes `/categories`.
+- `OrderController` exposes `/orders`.
 - `ProductService` contains application logic and DTO-to-entity mapping.
-- `ProductRepository` extends `JpaRepository<Product, Long>` for persistence.
-- `Product` is the JPA entity mapped to the `products` table.
+- `OrderService` shows `@Transactional` parent-child persistence for `Order` + `OrderItem`.
+- `ProductRepository` extends `JpaRepository<Product, Long>` + `JpaSpecificationExecutor<Product>`.
+- Domain entities: `Product`, `Category`, `Order`, `OrderItem`.
 
 Data input for creation is modeled via `ProductDTO`:
 
@@ -60,15 +64,7 @@ The API will be available at `http://localhost:8080`.
 
 ## Database Configuration Note
 
-Current repository configuration uses:
-
-- `compose.yaml`: `POSTGRES_DB=mydatabase`
-- `application.properties`: `spring.datasource.url=jdbc:postgresql://localhost:5432/postgres`
-
-To avoid environment-specific connection issues, align these values. Recommended option:
-
-- keep Compose as-is and update datasource URL to:
-  - `jdbc:postgresql://localhost:5432/mydatabase`
+Schema is managed by Flyway migrations in `src/main/resources/db/migration` and Hibernate DDL auto-update is disabled (`spring.jpa.hibernate.ddl-auto=validate`).
 
 ## API Reference
 
