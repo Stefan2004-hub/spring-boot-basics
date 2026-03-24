@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.jayway.jsonpath.JsonPath;
 import com.interview.demo.entity.Category;
 import com.interview.demo.entity.Product;
 import com.interview.demo.repository.CategoryRepository;
@@ -144,6 +145,54 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .andExpect(jsonPath("$.createdAt").value(org.hamcrest.Matchers.matchesRegex("\\d{4}-\\d{2}-\\d{2}")))
         .andExpect(jsonPath("$.items.length()").value(2))
         .andExpect(jsonPath("$.items[0].order").doesNotExist());
+  }
+
+  @Test
+  void shouldGetOrderItemsByOrderId() throws Exception {
+    Product keyboard = productRepository.save(product("Keyboard", new BigDecimal("100.00")));
+    Product mouse = productRepository.save(product("Mouse", new BigDecimal("50.00")));
+
+    String createResponse =
+        mockMvc
+            .perform(
+                post("/orders")
+                    .contentType("application/json")
+                    .content(
+                        """
+                        {
+                          "customerName": "Alice",
+                          "items": [
+                            {"productId": %d, "quantity": 2},
+                            {"productId": %d, "quantity": 1}
+                          ]
+                        }
+                        """
+                            .formatted(keyboard.getId(), mouse.getId())))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    long orderId = Long.parseLong(JsonPath.read(createResponse, "$.id").toString());
+
+    mockMvc
+        .perform(get("/orders/{id}/items", orderId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(2))
+        .andExpect(jsonPath("$[0].id").exists())
+        .andExpect(jsonPath("$[0].productId").exists())
+        .andExpect(jsonPath("$[0].productName").exists())
+        .andExpect(jsonPath("$[0].quantity").exists())
+        .andExpect(jsonPath("$[0].unitPrice").exists())
+        .andExpect(jsonPath("$[0].lineTotal").exists());
+  }
+
+  @Test
+  void shouldReturnNotFoundWhenGettingOrderItemsForMissingOrder() throws Exception {
+    mockMvc
+        .perform(get("/orders/{id}/items", 999999L))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.error").value("Order not found: 999999"));
   }
 
   @Test

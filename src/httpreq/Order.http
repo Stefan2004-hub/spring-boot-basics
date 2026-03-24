@@ -8,6 +8,16 @@ Content-Type: application/json
     { "productId": 2, "quantity": 1 }
   ]
 }
+###
+POST http://localhost:8080/orders
+Content-Type: application/json
+
+{
+  "customerName": "Alice",
+  "items": [
+    { "productId": 2, "quantity": 2 }  
+  ]
+}
 
 ###
 POST http://localhost:8080/orders
@@ -28,3 +38,6 @@ Content-Type: application/json
     { "productId": 999999, "quantity": 1 }
   ]
 }
+
+###
+GET http://localhost:8080/orders/1/items

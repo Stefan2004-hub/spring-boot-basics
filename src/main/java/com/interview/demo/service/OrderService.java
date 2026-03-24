@@ -8,6 +8,7 @@ import com.interview.demo.entity.Order;
 import com.interview.demo.entity.OrderItem;
 import com.interview.demo.entity.OrderStatus;
 import com.interview.demo.entity.Product;
+import com.interview.demo.exception.ResourceNotFoundException;
 import com.interview.demo.exception.ValidationException;
 import com.interview.demo.repository.OrderRepository;
 import java.math.BigDecimal;
@@ -65,19 +66,18 @@ public class OrderService {
     return toResponse(savedOrder);
   }
 
+  @Transactional(readOnly = true)
+  public List<OrderItemResponse> getOrderItemsByOrderId(Long orderId) {
+    Order order =
+        orderRepository
+            .findByIdWithItemsAndProducts(orderId)
+            .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+    return order.getItems().stream().map(this::toItemResponse).toList();
+  }
+
   private OrderResponse toResponse(Order order) {
     List<OrderItemResponse> items =
-        order.getItems().stream()
-            .map(
-                item ->
-                    new OrderItemResponse(
-                        item.getId(),
-                        item.getProduct().getId(),
-                        item.getProduct().getName(),
-                        item.getQuantity(),
-                        item.getUnitPrice(),
-                        item.getLineTotal()))
-            .toList();
+        order.getItems().stream().map(this::toItemResponse).toList();
     return new OrderResponse(
         order.getId(),
         order.getCustomerName(),
@@ -85,5 +85,15 @@ public class OrderService {
         order.getTotalAmount(),
         order.getCreatedAt(),
         items);
+  }
+
+  private OrderItemResponse toItemResponse(OrderItem item) {
+    return new OrderItemResponse(
+        item.getId(),
+        item.getProduct().getId(),
+        item.getProduct().getName(),
+        item.getQuantity(),
+        item.getUnitPrice(),
+        item.getLineTotal());
   }
 }
