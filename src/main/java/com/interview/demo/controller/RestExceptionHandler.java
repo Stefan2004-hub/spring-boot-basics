@@ -3,6 +3,7 @@ package com.interview.demo.controller;
 import com.interview.demo.exception.ConflictException;
 import com.interview.demo.exception.ResourceNotFoundException;
 import com.interview.demo.exception.ValidationException;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Comparator;
 import java.util.Map;
@@ -72,7 +73,7 @@ public class RestExceptionHandler {
                                 .getAnnotation()
                                 .annotationType()
                                 .getSimpleName())))
-            .map(violation -> violation.getMessage())
+            .map(ConstraintViolation::getMessage)
             .orElse("Validation failed");
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(ERROR_KEY, message));
   }
