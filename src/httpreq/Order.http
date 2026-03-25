@@ -8,6 +8,18 @@ Content-Type: application/json
     { "productId": 2, "quantity": 1 }
   ]
 }
+
+###
+PUT http://localhost:8080/orders/1
+Content-Type: application/json
+
+{
+  "status": "CONFIRMED"
+}
+
+###
+DELETE http://localhost:8080/orders/1
+
 ###
 POST http://localhost:8080/orders
 Content-Type: application/json

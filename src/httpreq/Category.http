@@ -9,6 +9,17 @@ Content-Type: application/json
 }
 
 ###
+PUT http://localhost:8080/categories/1
+Content-Type: application/json
+
+{
+  "name": "Audio"
+}
+
+###
+DELETE http://localhost:8080/categories/1
+
+###
 POST http://localhost:8080/categories
 Content-Type: application/json
 

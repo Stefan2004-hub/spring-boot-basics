@@ -81,6 +81,20 @@ curl -X POST http://localhost:8080/categories \
   -d '{"name":"Electronics"}'
 ```
 
+#### `PUT /categories/{id}`
+
+```bash
+curl -X PUT http://localhost:8080/categories/1 \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Audio"}'
+```
+
+#### `DELETE /categories/{id}`
+
+```bash
+curl -X DELETE http://localhost:8080/categories/1
+```
+
 ### Products
 
 #### `GET /products`
@@ -122,6 +136,44 @@ curl "http://localhost:8080/products/search?name=laptop&minPrice=1000&maxPrice=2
 curl http://localhost:8080/products/summaries
 ```
 
+#### `PUT /products/{id}`
+
+Full replacement update (same required fields as `POST`).
+
+```bash
+curl -X PUT http://localhost:8080/products/2 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Keyboard Pro",
+    "description": "Mechanical keyboard with RGB",
+    "price": 99.99,
+    "categoryId": 1
+  }'
+```
+
+#### `PATCH /products/{id}`
+
+Partial update for one or more fields (`name`, `description`, `price`, `categoryId`).
+
+```bash
+curl -X PATCH http://localhost:8080/products/2 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "price": 19.99
+  }'
+```
+
+Notes:
+- Empty payload `{}` returns `400`.
+- Explicit `null` values are rejected (including `"categoryId": null`).
+- Unknown fields return `400`.
+
+#### `DELETE /products/{id}`
+
+```bash
+curl -X DELETE http://localhost:8080/products/1
+```
+
 ### Orders
 
 #### `POST /orders`
@@ -146,6 +198,24 @@ Returns order items for the given order id, including `productName`.
 curl http://localhost:8080/orders/1/items
 ```
 
+#### `PUT /orders/{id}`
+
+Updates order `status` only.
+
+```bash
+curl -X PUT http://localhost:8080/orders/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "CONFIRMED"
+  }'
+```
+
+#### `DELETE /orders/{id}`
+
+```bash
+curl -X DELETE http://localhost:8080/orders/1
+```
+
 ## Validation and Error Handling
 
 Validation is enforced through bean validation and service-level checks.
@@ -162,7 +232,7 @@ Typical status codes:
 
 - `400 Bad Request` for validation errors
 - `404 Not Found` for missing resources (e.g. missing product/order/category)
-- `409 Conflict` for business conflicts (e.g. duplicate category)
+- `409 Conflict` for business conflicts (e.g. duplicate category or deleting referenced resources)
 - `500 Internal Server Error` for unexpected failures
 
 Example `404`:
@@ -174,6 +244,20 @@ curl http://localhost:8080/orders/999999/items
 ```json
 {
   "error": "Order not found: 999999"
+}
+```
+
+Example `400` for PATCH payload validation:
+
+```bash
+curl -X PATCH http://localhost:8080/products/2 \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+```json
+{
+  "error": "At least one field must be provided"
 }
 ```
 
@@ -222,6 +306,5 @@ src/
 
 ## Current Limitations
 
-- No update/delete endpoints for categories, products, or orders.
 - No pagination on product listing/search endpoints.
 - Error payload is intentionally minimal (`{ "error": "..." }`).
