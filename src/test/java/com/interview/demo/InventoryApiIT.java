@@ -1,7 +1,9 @@
 package com.interview.demo;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -274,6 +276,200 @@ class InventoryApiIT extends PostgresContainerTestBase {
                     """))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("Order must contain at least one item"));
+  }
+
+  @Test
+  void shouldUpdateCategory() throws Exception {
+    Category category = categoryRepository.save(new Category(null, "Electronics"));
+
+    mockMvc
+        .perform(
+            put("/categories/{id}", category.getId())
+                .contentType("application/json")
+                .content("{\"name\":\"Audio\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(category.getId()))
+        .andExpect(jsonPath("$.name").value("Audio"));
+  }
+
+  @Test
+  void shouldDeleteCategory() throws Exception {
+    Category category = categoryRepository.save(new Category(null, "Electronics"));
+
+    mockMvc
+        .perform(delete("/categories/{id}", category.getId()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.message").value("Category deleted successfully"));
+
+    mockMvc
+        .perform(get("/categories"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(0));
+  }
+
+  @Test
+  void shouldReturnConflictWhenDeletingCategoryInUse() throws Exception {
+    Category category = categoryRepository.save(new Category(null, "Electronics"));
+    Product product = product("Laptop", new BigDecimal("1000.00"));
+    product.setCategory(category);
+    productRepository.save(product);
+
+    mockMvc
+        .perform(delete("/categories/{id}", category.getId()))
+        .andExpect(status().isConflict())
+        .andExpect(
+            jsonPath("$.error")
+                .value("Category is in use and cannot be deleted: " + category.getId()));
+  }
+
+  @Test
+  void shouldUpdateProduct() throws Exception {
+    Category oldCategory = categoryRepository.save(new Category(null, "Electronics"));
+    Category newCategory = categoryRepository.save(new Category(null, "Accessories"));
+
+    Product product = product("Mouse", new BigDecimal("20.00"));
+    product.setCategory(oldCategory);
+    product = productRepository.save(product);
+
+    mockMvc
+        .perform(
+            put("/products/{id}", product.getId())
+                .contentType("application/json")
+                .content(
+                    """
+                    {
+                      "name": "Gaming Mouse",
+                      "description": "High DPI gaming mouse",
+                      "price": 49.99,
+                      "categoryId": %d
+                    }
+                    """
+                        .formatted(newCategory.getId())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(product.getId()))
+        .andExpect(jsonPath("$.name").value("Gaming Mouse"))
+        .andExpect(jsonPath("$.price").value(49.99))
+        .andExpect(jsonPath("$.categoryId").value(newCategory.getId()))
+        .andExpect(jsonPath("$.categoryName").value("Accessories"));
+  }
+
+  @Test
+  void shouldDeleteProduct() throws Exception {
+    Product product = productRepository.save(product("Mouse", new BigDecimal("20.00")));
+
+    mockMvc
+        .perform(delete("/products/{id}", product.getId()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.message").value("Product deleted successfully"));
+  }
+
+  @Test
+  void shouldReturnConflictWhenDeletingProductInUseByOrder() throws Exception {
+    Product product = productRepository.save(product("Keyboard", new BigDecimal("100.00")));
+
+    mockMvc
+        .perform(
+            post("/orders")
+                .contentType("application/json")
+                .content(
+                    """
+                    {
+                      "customerName": "Alice",
+                      "items": [
+                        {"productId": %d, "quantity": 1}
+                      ]
+                    }
+                    """
+                        .formatted(product.getId())))
+        .andExpect(status().isOk());
+
+    mockMvc
+        .perform(delete("/products/{id}", product.getId()))
+        .andExpect(status().isConflict())
+        .andExpect(
+            jsonPath("$.error").value("Product is in use and cannot be deleted: " + product.getId()));
+  }
+
+  @Test
+  void shouldUpdateOrderStatus() throws Exception {
+    Product product = productRepository.save(product("Keyboard", new BigDecimal("100.00")));
+
+    String createResponse =
+        mockMvc
+            .perform(
+                post("/orders")
+                    .contentType("application/json")
+                    .content(
+                        """
+                        {
+                          "customerName": "Alice",
+                          "items": [
+                            {"productId": %d, "quantity": 2}
+                          ]
+                        }
+                        """
+                            .formatted(product.getId())))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    long orderId = Long.parseLong(JsonPath.read(createResponse, "$.id").toString());
+
+    mockMvc
+        .perform(
+            put("/orders/{id}", orderId)
+                .contentType("application/json")
+                .content("{\"status\":\"CONFIRMED\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(orderId))
+        .andExpect(jsonPath("$.status").value("CONFIRMED"))
+        .andExpect(jsonPath("$.totalAmount").value(200.00));
+  }
+
+  @Test
+  void shouldDeleteOrder() throws Exception {
+    Product product = productRepository.save(product("Keyboard", new BigDecimal("100.00")));
+
+    String createResponse =
+        mockMvc
+            .perform(
+                post("/orders")
+                    .contentType("application/json")
+                    .content(
+                        """
+                        {
+                          "customerName": "Alice",
+                          "items": [
+                            {"productId": %d, "quantity": 1}
+                          ]
+                        }
+                        """
+                            .formatted(product.getId())))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    long orderId = Long.parseLong(JsonPath.read(createResponse, "$.id").toString());
+
+    mockMvc
+        .perform(delete("/orders/{id}", orderId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.message").value("Order deleted successfully"));
+
+    mockMvc
+        .perform(get("/orders/{id}/items", orderId))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.error").value("Order not found: " + orderId));
+  }
+
+  @Test
+  void shouldReturnNotFoundWhenDeletingMissingProduct() throws Exception {
+    mockMvc
+        .perform(delete("/products/{id}", 999999L))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.error").value("Product not found: 999999"));
   }
 
   private Product product(String name, BigDecimal price) {

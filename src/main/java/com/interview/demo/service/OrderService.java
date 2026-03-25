@@ -4,6 +4,7 @@ import com.interview.demo.dto.order.CreateOrderItemRequest;
 import com.interview.demo.dto.order.CreateOrderRequest;
 import com.interview.demo.dto.order.OrderItemResponse;
 import com.interview.demo.dto.order.OrderResponse;
+import com.interview.demo.dto.order.UpdateOrderStatusRequest;
 import com.interview.demo.entity.Order;
 import com.interview.demo.entity.OrderItem;
 import com.interview.demo.entity.OrderStatus;
@@ -75,6 +76,19 @@ public class OrderService {
     return order.getItems().stream().map(this::toItemResponse).toList();
   }
 
+  @Transactional
+  public OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request) {
+    Order order = getById(orderId);
+    order.setStatus(request.status());
+    return toResponse(orderRepository.save(order));
+  }
+
+  @Transactional
+  public void deleteOrder(Long orderId) {
+    Order order = getById(orderId);
+    orderRepository.delete(order);
+  }
+
   private OrderResponse toResponse(Order order) {
     List<OrderItemResponse> items =
         order.getItems().stream().map(this::toItemResponse).toList();
@@ -95,5 +109,11 @@ public class OrderService {
         item.getQuantity(),
         item.getUnitPrice(),
         item.getLineTotal());
+  }
+
+  private Order getById(Long orderId) {
+    return orderRepository
+        .findById(orderId)
+        .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
   }
 }

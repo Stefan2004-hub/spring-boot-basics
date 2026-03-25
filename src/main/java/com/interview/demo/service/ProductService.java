@@ -4,6 +4,7 @@ import com.interview.demo.dto.ProductDTO;
 import com.interview.demo.dto.ProductResponse;
 import com.interview.demo.entity.Category;
 import com.interview.demo.entity.Product;
+import com.interview.demo.exception.ConflictException;
 import com.interview.demo.exception.ResourceNotFoundException;
 import com.interview.demo.repository.ProductRepository;
 import com.interview.demo.repository.projection.ProductSummary;
@@ -12,6 +13,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,8 +71,30 @@ public class ProductService {
     return productRepository.findAllProjectedBy();
   }
 
+  @Transactional
+  public ProductResponse updateProduct(Long id, ProductDTO product) {
+    Product existing = getById(id);
+    existing.setName(product.name());
+    existing.setDescription(product.description());
+    existing.setPrice(product.price());
+    if (product.categoryId() != null) {
+      Category category = categoryService.getById(product.categoryId());
+      existing.setCategory(category);
+    } else {
+      existing.setCategory(null);
+    }
+    return toResponse(productRepository.save(existing));
+  }
+
+  @Transactional
   public void deleteProduct(Long id) {
-    productRepository.deleteById(id);
+    Product product = getById(id);
+    try {
+      productRepository.delete(product);
+      productRepository.flush();
+    } catch (DataIntegrityViolationException ex) {
+      throw new ConflictException("Product is in use and cannot be deleted: " + id);
+    }
   }
 
   private ProductResponse toResponse(Product product) {

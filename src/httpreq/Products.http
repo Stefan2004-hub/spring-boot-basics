@@ -11,6 +11,20 @@ Content-Type: application/json
 }
 
 ###
+PUT http://localhost:8080/products/1
+Content-Type: application/json
+
+{
+  "name": "Product 1 Updated",
+  "description": "Updated description",
+  "price": 29.99,
+  "categoryId": 1
+}
+
+###
+DELETE http://localhost:8080/products/1
+
+###
 GET http://localhost:8080/products/by-category/Electronics
 
 ###
