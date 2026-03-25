@@ -11,7 +11,7 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:8080/products/1
+PUT http://localhost:8080/products/2
 Content-Type: application/json
 
 {
@@ -22,11 +22,11 @@ Content-Type: application/json
 }
 
 ###
-PATCH http://localhost:8080/products/1
+PATCH http://localhost:8080/products/2
 Content-Type: application/json
 
 {
-  "price": 24.99
+  "price": 19.99
 }
 
 ###
