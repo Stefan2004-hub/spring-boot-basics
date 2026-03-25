@@ -2,6 +2,7 @@ package com.interview.demo.controller;
 
 import com.interview.demo.dto.ProductDTO;
 import com.interview.demo.dto.ProductResponse;
+import com.interview.demo.dto.PatchProductRequest;
 import com.interview.demo.repository.projection.ProductSummary;
 import com.interview.demo.service.ProductService;
 import jakarta.validation.Valid;
@@ -11,6 +12,7 @@ import java.util.Map;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -58,6 +60,11 @@ public class ProductController {
   @PutMapping("/{id}")
   public ProductResponse updateProduct(@PathVariable Long id, @Valid @RequestBody ProductDTO product) {
     return productService.updateProduct(id, product);
+  }
+
+  @PatchMapping("/{id}")
+  public ProductResponse patchProduct(@PathVariable Long id, @RequestBody PatchProductRequest request) {
+    return productService.patchProduct(id, request);
   }
 
   @DeleteMapping("/{id}")

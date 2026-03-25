@@ -22,6 +22,14 @@ Content-Type: application/json
 }
 
 ###
+PATCH http://localhost:8080/products/1
+Content-Type: application/json
+
+{
+  "price": 24.99
+}
+
+###
 DELETE http://localhost:8080/products/1
 
 ###

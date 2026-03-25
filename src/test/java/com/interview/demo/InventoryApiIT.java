@@ -2,15 +2,16 @@ package com.interview.demo;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.jayway.jsonpath.JsonPath;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.interview.demo.dto.CreateCategoryRequest;
+import com.interview.demo.dto.PatchProductRequest;
 import com.interview.demo.dto.ProductDTO;
 import com.interview.demo.dto.order.CreateOrderItemRequest;
 import com.interview.demo.dto.order.CreateOrderRequest;
@@ -22,8 +23,11 @@ import com.interview.demo.repository.CategoryRepository;
 import com.interview.demo.repository.OrderRepository;
 import com.interview.demo.repository.ProductRepository;
 import com.interview.demo.support.PostgresContainerTestBase;
+import com.jayway.jsonpath.JsonPath;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -113,7 +117,11 @@ class InventoryApiIT extends PostgresContainerTestBase {
     productRepository.save(product("Gaming Mouse", new BigDecimal("100.00")));
 
     mockMvc
-        .perform(get("/products/search").param("name", "laptop").param("minPrice", "1000").param("maxPrice", "1700"))
+        .perform(
+            get("/products/search")
+                .param("name", "laptop")
+                .param("minPrice", "1000")
+                .param("maxPrice", "1700"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(1))
         .andExpect(jsonPath("$[0].name").value("Gaming Laptop"));
@@ -150,7 +158,9 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .andExpect(jsonPath("$.status").value("CREATED"))
         .andExpect(jsonPath("$.totalAmount").value(250.00))
         .andExpect(jsonPath("$.createdAt").exists())
-        .andExpect(jsonPath("$.createdAt").value(org.hamcrest.Matchers.matchesRegex("\\d{4}-\\d{2}-\\d{2}")))
+        .andExpect(
+            jsonPath("$.createdAt")
+                .value(org.hamcrest.Matchers.matchesRegex("\\d{4}-\\d{2}-\\d{2}")))
         .andExpect(jsonPath("$.items.length()").value(2))
         .andExpect(jsonPath("$.items[0].order").doesNotExist());
   }
@@ -207,10 +217,7 @@ class InventoryApiIT extends PostgresContainerTestBase {
                 .content(
                     json(
                         new ProductDTO(
-                            "Laptop Pro",
-                            "Powerful laptop",
-                            new BigDecimal("1999.99"),
-                            999999L))))
+                            "Laptop Pro", "Powerful laptop", new BigDecimal("1999.99"), 999999L))))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.error").value("Category not found: 999999"));
   }
@@ -332,6 +339,101 @@ class InventoryApiIT extends PostgresContainerTestBase {
   }
 
   @Test
+  void shouldPatchProductNameOnly() throws Exception {
+    Product product = productRepository.save(product("Mouse", new BigDecimal("20.00")));
+    PatchProductRequest patchRequest = new PatchProductRequest();
+    patchRequest.setName("Gaming Mouse");
+
+    mockMvc
+        .perform(
+            patch("/products/{id}", product.getId())
+                .contentType("application/json")
+                .content(json(patchRequest)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(product.getId()))
+        .andExpect(jsonPath("$.name").value("Gaming Mouse"))
+        .andExpect(jsonPath("$.description").value("Mouse description"))
+        .andExpect(jsonPath("$.price").value(20.00));
+  }
+
+  @Test
+  void shouldPatchProductCategory() throws Exception {
+    Category oldCategory = categoryRepository.save(new Category(null, "Electronics"));
+    Category newCategory = categoryRepository.save(new Category(null, "Accessories"));
+    Product product = product("Mouse", new BigDecimal("20.00"));
+    product.setCategory(oldCategory);
+    product = productRepository.save(product);
+
+    PatchProductRequest patchRequest = new PatchProductRequest();
+    patchRequest.setCategoryId(newCategory.getId());
+
+    mockMvc
+        .perform(
+            patch("/products/{id}", product.getId())
+                .contentType("application/json")
+                .content(json(patchRequest)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(product.getId()))
+        .andExpect(jsonPath("$.categoryId").value(newCategory.getId()))
+        .andExpect(jsonPath("$.categoryName").value("Accessories"));
+  }
+
+  @Test
+  void shouldReturnBadRequestForEmptyProductPatchPayload() throws Exception {
+    Product product = productRepository.save(product("Mouse", new BigDecimal("20.00")));
+
+    mockMvc
+        .perform(
+            patch("/products/{id}", product.getId())
+                .contentType("application/json")
+                .content(json(new PatchProductRequest())))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("At least one field must be provided"));
+  }
+
+  @Test
+  void shouldReturnBadRequestForNullCategoryInProductPatch() throws Exception {
+    Product product = productRepository.save(product("Mouse", new BigDecimal("20.00")));
+    Map<String, Object> patchRequest = new HashMap<>();
+    patchRequest.put("categoryId", null);
+
+    mockMvc
+        .perform(
+            patch("/products/{id}", product.getId())
+                .contentType("application/json")
+                .content(json(patchRequest)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("Category id cannot be null"));
+  }
+
+  @Test
+  void shouldReturnBadRequestForUnknownFieldInProductPatch() throws Exception {
+    Product product = productRepository.save(product("Mouse", new BigDecimal("20.00")));
+
+    mockMvc
+        .perform(
+            patch("/products/{id}", product.getId())
+                .contentType("application/json")
+                .content(json(Map.of("notAProductField", "x"))))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("Unknown field: notAProductField"));
+  }
+
+  @Test
+  void shouldReturnNotFoundWhenPatchingMissingProduct() throws Exception {
+    PatchProductRequest patchRequest = new PatchProductRequest();
+    patchRequest.setName("Anything");
+
+    mockMvc
+        .perform(
+            patch("/products/{id}", 999999L)
+                .contentType("application/json")
+                .content(json(patchRequest)))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.error").value("Product not found: 999999"));
+  }
+
+  @Test
   void shouldDeleteProduct() throws Exception {
     Product product = productRepository.save(product("Mouse", new BigDecimal("20.00")));
 
@@ -356,7 +458,8 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .perform(delete("/products/{id}", product.getId()))
         .andExpect(status().isConflict())
         .andExpect(
-            jsonPath("$.error").value("Product is in use and cannot be deleted: " + product.getId()));
+            jsonPath("$.error")
+                .value("Product is in use and cannot be deleted: " + product.getId()));
   }
 
   @Test
