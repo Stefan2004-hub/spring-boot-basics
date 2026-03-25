@@ -123,8 +123,60 @@ class InventoryApiIT extends PostgresContainerTestBase {
                 .param("minPrice", "1000")
                 .param("maxPrice", "1700"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(1))
-        .andExpect(jsonPath("$[0].name").value("Gaming Laptop"));
+        .andExpect(jsonPath("$.content.length()").value(1))
+        .andExpect(jsonPath("$.content[0].name").value("Gaming Laptop"))
+        .andExpect(jsonPath("$.number").value(0))
+        .andExpect(jsonPath("$.size").value(20))
+        .andExpect(jsonPath("$.totalElements").value(1));
+  }
+
+  @Test
+  void shouldUseDefaultPaginationWhenSearchingProducts() throws Exception {
+    for (int i = 1; i <= 25; i++) {
+      productRepository.save(product("Laptop " + i, new BigDecimal("1000.00")));
+    }
+
+    mockMvc
+        .perform(get("/products/search").param("name", "laptop"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(20))
+        .andExpect(jsonPath("$.number").value(0))
+        .andExpect(jsonPath("$.size").value(20))
+        .andExpect(jsonPath("$.totalElements").value(25))
+        .andExpect(jsonPath("$.totalPages").value(2));
+  }
+
+  @Test
+  void shouldReturnSecondPageWhenUsingOneBasedPageParameter() throws Exception {
+    productRepository.save(product("Laptop 1", new BigDecimal("1000.00")));
+    productRepository.save(product("Laptop 2", new BigDecimal("1000.00")));
+    productRepository.save(product("Laptop 3", new BigDecimal("1000.00")));
+
+    mockMvc
+        .perform(get("/products/search").param("name", "laptop").param("page", "2").param("size", "2"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(1))
+        .andExpect(jsonPath("$.content[0].name").value("Laptop 3"))
+        .andExpect(jsonPath("$.number").value(1))
+        .andExpect(jsonPath("$.size").value(2))
+        .andExpect(jsonPath("$.totalElements").value(3))
+        .andExpect(jsonPath("$.totalPages").value(2));
+  }
+
+  @Test
+  void shouldReturnBadRequestForInvalidSearchPage() throws Exception {
+    mockMvc
+        .perform(get("/products/search").param("page", "0"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("page must be at least 1"));
+  }
+
+  @Test
+  void shouldReturnBadRequestForInvalidSearchSize() throws Exception {
+    mockMvc
+        .perform(get("/products/search").param("size", "101"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("size must be between 1 and 100"));
   }
 
   @Test

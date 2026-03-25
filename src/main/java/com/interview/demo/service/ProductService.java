@@ -14,6 +14,10 @@ import com.interview.demo.repository.specification.ProductSpecifications;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -60,13 +64,21 @@ public class ProductService {
   }
 
   @Transactional(readOnly = true)
-  public List<ProductResponse> searchProducts(
-      String name, BigDecimal minPrice, BigDecimal maxPrice) {
+  public Page<ProductResponse> searchProducts(
+      String name, BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
+    if (page < 1) {
+      throw new ValidationException("page must be at least 1");
+    }
+    if (size < 1 || size > 100) {
+      throw new ValidationException("size must be between 1 and 100");
+    }
+
     Specification<Product> spec =
         ProductSpecifications.nameContains(name)
             .and(ProductSpecifications.priceGte(minPrice))
             .and(ProductSpecifications.priceLte(maxPrice));
-    return productRepository.findAll(spec).stream().map(this::toResponse).toList();
+    Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.ASC, "id"));
+    return productRepository.findAll(spec, pageable).map(this::toResponse);
   }
 
   public List<ProductSummary> getProductSummaries() {

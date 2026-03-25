@@ -124,10 +124,16 @@ curl -X POST http://localhost:8080/products \
 curl http://localhost:8080/products/by-category/Electronics
 ```
 
-#### `GET /products/search?name=&minPrice=&maxPrice=`
+#### `GET /products/search?name=&minPrice=&maxPrice=&page=&size=`
+
+Pagination:
+- `page` is **one-based** (`page=1` is the first page)
+- defaults: `page=1`, `size=20`
+- `size` must be between `1` and `100`
+- default sort is `id,asc`
 
 ```bash
-curl "http://localhost:8080/products/search?name=laptop&minPrice=1000&maxPrice=2000"
+curl "http://localhost:8080/products/search?name=laptop&minPrice=1000&maxPrice=2000&page=1&size=20"
 ```
 
 #### `GET /products/summaries`
