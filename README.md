@@ -309,8 +309,3 @@ src/
     Products.http
     Order.http
 ```
-
-## Current Limitations
-
-- No pagination on product listing/search endpoints.
-- Error payload is intentionally minimal (`{ "error": "..." }`).
