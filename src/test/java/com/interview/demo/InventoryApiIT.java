@@ -8,13 +8,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.interview.demo.dto.CreateCategoryRequest;
+import com.interview.demo.dto.ProductDTO;
+import com.interview.demo.dto.order.CreateOrderItemRequest;
+import com.interview.demo.dto.order.CreateOrderRequest;
+import com.interview.demo.dto.order.UpdateOrderStatusRequest;
 import com.interview.demo.entity.Category;
+import com.interview.demo.entity.OrderStatus;
 import com.interview.demo.entity.Product;
 import com.interview.demo.repository.CategoryRepository;
 import com.interview.demo.repository.OrderRepository;
 import com.interview.demo.repository.ProductRepository;
 import com.interview.demo.support.PostgresContainerTestBase;
 import java.math.BigDecimal;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +35,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 class InventoryApiIT extends PostgresContainerTestBase {
   @Autowired private MockMvc mockMvc;
+  @Autowired private ObjectMapper objectMapper;
   @Autowired private CategoryRepository categoryRepository;
   @Autowired private ProductRepository productRepository;
   @Autowired private OrderRepository orderRepository;
@@ -40,14 +50,20 @@ class InventoryApiIT extends PostgresContainerTestBase {
   @Test
   void shouldCreateCategoryAndRejectDuplicateCategoryName() throws Exception {
     mockMvc
-        .perform(post("/categories").contentType("application/json").content("{\"name\":\"Electronics\"}"))
+        .perform(
+            post("/categories")
+                .contentType("application/json")
+                .content(json(new CreateCategoryRequest("Electronics"))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").exists())
         .andExpect(jsonPath("$.name").value("Electronics"))
         .andExpect(jsonPath("$.products").doesNotExist());
 
     mockMvc
-        .perform(post("/categories").contentType("application/json").content("{\"name\":\"Electronics\"}"))
+        .perform(
+            post("/categories")
+                .contentType("application/json")
+                .content(json(new CreateCategoryRequest("Electronics"))))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.error").value("Category already exists: Electronics"));
   }
@@ -75,15 +91,12 @@ class InventoryApiIT extends PostgresContainerTestBase {
             post("/products")
                 .contentType("application/json")
                 .content(
-                    """
-                    {
-                      "name": "Laptop Pro",
-                      "description": "Powerful laptop",
-                      "price": 1999.99,
-                      "categoryId": %d
-                    }
-                    """
-                        .formatted(category.getId())))
+                    json(
+                        new ProductDTO(
+                            "Laptop Pro",
+                            "Powerful laptop",
+                            new BigDecimal("1999.99"),
+                            category.getId()))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.name").value("Laptop Pro"));
 
@@ -127,17 +140,7 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .perform(
             post("/orders")
                 .contentType("application/json")
-                .content(
-                    """
-                    {
-                      "customerName": "Alice",
-                      "items": [
-                        {"productId": %d, "quantity": 2},
-                        {"productId": %d, "quantity": 1}
-                      ]
-                    }
-                    """
-                        .formatted(keyboard.getId(), mouse.getId())))
+                .content(json(orderRequest("Alice", keyboard.getId(), 2, mouse.getId(), 1))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").exists())
         .andExpect(jsonPath("$.customerName").value("Alice"))
@@ -159,17 +162,7 @@ class InventoryApiIT extends PostgresContainerTestBase {
             .perform(
                 post("/orders")
                     .contentType("application/json")
-                    .content(
-                        """
-                        {
-                          "customerName": "Alice",
-                          "items": [
-                            {"productId": %d, "quantity": 2},
-                            {"productId": %d, "quantity": 1}
-                          ]
-                        }
-                        """
-                            .formatted(keyboard.getId(), mouse.getId())))
+                    .content(json(orderRequest("Alice", keyboard.getId(), 2, mouse.getId(), 1))))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -204,14 +197,12 @@ class InventoryApiIT extends PostgresContainerTestBase {
             post("/products")
                 .contentType("application/json")
                 .content(
-                    """
-                    {
-                      "name": "Laptop Pro",
-                      "description": "Powerful laptop",
-                      "price": 1999.99,
-                      "categoryId": 999999
-                    }
-                    """))
+                    json(
+                        new ProductDTO(
+                            "Laptop Pro",
+                            "Powerful laptop",
+                            new BigDecimal("1999.99"),
+                            999999L))))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.error").value("Category not found: 999999"));
   }
@@ -222,15 +213,7 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .perform(
             post("/orders")
                 .contentType("application/json")
-                .content(
-                    """
-                    {
-                      "customerName": "Alice",
-                      "items": [
-                        {"productId": 999999, "quantity": 1}
-                      ]
-                    }
-                    """))
+                .content(json(orderRequest("Alice", 999999L, 1))))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.error").value("Product not found: 999999"));
   }
@@ -238,7 +221,10 @@ class InventoryApiIT extends PostgresContainerTestBase {
   @Test
   void shouldReturnBadRequestForInvalidCategoryPayload() throws Exception {
     mockMvc
-        .perform(post("/categories").contentType("application/json").content("{\"name\":\"\"}"))
+        .perform(
+            post("/categories")
+                .contentType("application/json")
+                .content(json(new CreateCategoryRequest(""))))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("Category name is required"));
   }
@@ -249,14 +235,7 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .perform(
             post("/products")
                 .contentType("application/json")
-                .content(
-                    """
-                    {
-                      "name": "Laptop Pro",
-                      "description": "Powerful laptop",
-                      "categoryId": 1
-                    }
-                    """))
+                .content(json(new ProductDTO("Laptop Pro", "Powerful laptop", null, 1L))))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("Product price is required"));
   }
@@ -267,13 +246,7 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .perform(
             post("/orders")
                 .contentType("application/json")
-                .content(
-                    """
-                    {
-                      "customerName": "Alice",
-                      "items": []
-                    }
-                    """))
+                .content(json(new CreateOrderRequest("Alice", List.of()))))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("Order must contain at least one item"));
   }
@@ -286,7 +259,7 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .perform(
             put("/categories/{id}", category.getId())
                 .contentType("application/json")
-                .content("{\"name\":\"Audio\"}"))
+                .content(json(new CreateCategoryRequest("Audio"))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(category.getId()))
         .andExpect(jsonPath("$.name").value("Audio"));
@@ -336,15 +309,12 @@ class InventoryApiIT extends PostgresContainerTestBase {
             put("/products/{id}", product.getId())
                 .contentType("application/json")
                 .content(
-                    """
-                    {
-                      "name": "Gaming Mouse",
-                      "description": "High DPI gaming mouse",
-                      "price": 49.99,
-                      "categoryId": %d
-                    }
-                    """
-                        .formatted(newCategory.getId())))
+                    json(
+                        new ProductDTO(
+                            "Gaming Mouse",
+                            "High DPI gaming mouse",
+                            new BigDecimal("49.99"),
+                            newCategory.getId()))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(product.getId()))
         .andExpect(jsonPath("$.name").value("Gaming Mouse"))
@@ -371,16 +341,7 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .perform(
             post("/orders")
                 .contentType("application/json")
-                .content(
-                    """
-                    {
-                      "customerName": "Alice",
-                      "items": [
-                        {"productId": %d, "quantity": 1}
-                      ]
-                    }
-                    """
-                        .formatted(product.getId())))
+                .content(json(orderRequest("Alice", product.getId(), 1))))
         .andExpect(status().isOk());
 
     mockMvc
@@ -399,16 +360,7 @@ class InventoryApiIT extends PostgresContainerTestBase {
             .perform(
                 post("/orders")
                     .contentType("application/json")
-                    .content(
-                        """
-                        {
-                          "customerName": "Alice",
-                          "items": [
-                            {"productId": %d, "quantity": 2}
-                          ]
-                        }
-                        """
-                            .formatted(product.getId())))
+                    .content(json(orderRequest("Alice", product.getId(), 2))))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -420,7 +372,7 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .perform(
             put("/orders/{id}", orderId)
                 .contentType("application/json")
-                .content("{\"status\":\"CONFIRMED\"}"))
+                .content(json(new UpdateOrderStatusRequest(OrderStatus.CONFIRMED))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(orderId))
         .andExpect(jsonPath("$.status").value("CONFIRMED"))
@@ -436,16 +388,7 @@ class InventoryApiIT extends PostgresContainerTestBase {
             .perform(
                 post("/orders")
                     .contentType("application/json")
-                    .content(
-                        """
-                        {
-                          "customerName": "Alice",
-                          "items": [
-                            {"productId": %d, "quantity": 1}
-                          ]
-                        }
-                        """
-                            .formatted(product.getId())))
+                    .content(json(orderRequest("Alice", product.getId(), 1))))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -470,6 +413,25 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .perform(delete("/products/{id}", 999999L))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.error").value("Product not found: 999999"));
+  }
+
+  private String json(Object request) {
+    try {
+      return objectMapper.writeValueAsString(request);
+    } catch (JsonProcessingException ex) {
+      throw new RuntimeException(ex);
+    }
+  }
+
+  private CreateOrderRequest orderRequest(String customerName, Object... productIdQuantityPairs) {
+    List<CreateOrderItemRequest> items = new java.util.ArrayList<>();
+    for (int i = 0; i < productIdQuantityPairs.length; i += 2) {
+      items.add(
+          new CreateOrderItemRequest(
+              ((Number) productIdQuantityPairs[i]).longValue(),
+              ((Number) productIdQuantityPairs[i + 1]).intValue()));
+    }
+    return new CreateOrderRequest(customerName, items);
   }
 
   private Product product(String name, BigDecimal price) {

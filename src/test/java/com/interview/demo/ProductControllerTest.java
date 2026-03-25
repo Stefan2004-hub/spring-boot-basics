@@ -5,8 +5,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.interview.demo.dto.ProductDTO;
 import com.interview.demo.support.PostgresContainerTestBase;
 import com.interview.demo.repository.ProductRepository;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 class ProductControllerTest extends PostgresContainerTestBase {
   @Autowired private MockMvc mockMvc;
+  @Autowired private ObjectMapper objectMapper;
   @Autowired private ProductRepository productRepository;
 
   @BeforeEach
@@ -27,17 +31,14 @@ class ProductControllerTest extends PostgresContainerTestBase {
 
   @Test
   void shouldCreateProduct() throws Exception {
-    String productJson =
-        """
-            {
-                "name": "Test Product",
-                "description": "This is a test product",
-                "price": 9.99
-            }
-        """;
+    ProductDTO request =
+        new ProductDTO("Test Product", "This is a test product", new BigDecimal("9.99"), null);
 
     mockMvc
-        .perform(post("/products").contentType("application/json").content(productJson))
+        .perform(
+            post("/products")
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(request)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").exists())
         .andExpect(jsonPath("$.name").value("Test Product"))
