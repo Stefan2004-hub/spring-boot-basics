@@ -140,7 +140,10 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .perform(
             post("/orders")
                 .contentType("application/json")
-                .content(json(orderRequest("Alice", keyboard.getId(), 2, mouse.getId(), 1))))
+                .content(
+                    json(
+                        orderRequest(
+                            "Alice", orderItem(keyboard.getId(), 2), orderItem(mouse.getId(), 1)))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").exists())
         .andExpect(jsonPath("$.customerName").value("Alice"))
@@ -162,7 +165,12 @@ class InventoryApiIT extends PostgresContainerTestBase {
             .perform(
                 post("/orders")
                     .contentType("application/json")
-                    .content(json(orderRequest("Alice", keyboard.getId(), 2, mouse.getId(), 1))))
+                    .content(
+                        json(
+                            orderRequest(
+                                "Alice",
+                                orderItem(keyboard.getId(), 2),
+                                orderItem(mouse.getId(), 1)))))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -213,7 +221,7 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .perform(
             post("/orders")
                 .contentType("application/json")
-                .content(json(orderRequest("Alice", 999999L, 1))))
+                .content(json(orderRequest("Alice", orderItem(999999L, 1)))))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.error").value("Product not found: 999999"));
   }
@@ -341,7 +349,7 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .perform(
             post("/orders")
                 .contentType("application/json")
-                .content(json(orderRequest("Alice", product.getId(), 1))))
+                .content(json(orderRequest("Alice", orderItem(product.getId(), 1)))))
         .andExpect(status().isOk());
 
     mockMvc
@@ -360,7 +368,7 @@ class InventoryApiIT extends PostgresContainerTestBase {
             .perform(
                 post("/orders")
                     .contentType("application/json")
-                    .content(json(orderRequest("Alice", product.getId(), 2))))
+                    .content(json(orderRequest("Alice", orderItem(product.getId(), 2)))))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -388,7 +396,7 @@ class InventoryApiIT extends PostgresContainerTestBase {
             .perform(
                 post("/orders")
                     .contentType("application/json")
-                    .content(json(orderRequest("Alice", product.getId(), 1))))
+                    .content(json(orderRequest("Alice", orderItem(product.getId(), 1)))))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -423,15 +431,12 @@ class InventoryApiIT extends PostgresContainerTestBase {
     }
   }
 
-  private CreateOrderRequest orderRequest(String customerName, Object... productIdQuantityPairs) {
-    List<CreateOrderItemRequest> items = new java.util.ArrayList<>();
-    for (int i = 0; i < productIdQuantityPairs.length; i += 2) {
-      items.add(
-          new CreateOrderItemRequest(
-              ((Number) productIdQuantityPairs[i]).longValue(),
-              ((Number) productIdQuantityPairs[i + 1]).intValue()));
-    }
-    return new CreateOrderRequest(customerName, items);
+  private CreateOrderRequest orderRequest(String customerName, CreateOrderItemRequest... items) {
+    return new CreateOrderRequest(customerName, List.of(items));
+  }
+
+  private CreateOrderItemRequest orderItem(long productId, int quantity) {
+    return new CreateOrderItemRequest(productId, quantity);
   }
 
   private Product product(String name, BigDecimal price) {
