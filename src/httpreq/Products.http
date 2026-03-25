@@ -36,7 +36,7 @@ DELETE http://localhost:8080/products/1
 GET http://localhost:8080/products/by-category/Electronics
 
 ###
-GET http://localhost:8080/products/search?name=prod&minPrice=10&maxPrice=100
+GET http://localhost:8080/products/search?name=prod&minPrice=10&maxPrice=100&page=1&size=20
 
 ###
 GET http://localhost:8080/products/summaries
