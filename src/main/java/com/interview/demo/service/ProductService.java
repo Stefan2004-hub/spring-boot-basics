@@ -105,56 +105,10 @@ public class ProductService {
     Product existing = getById(id);
     validatePatchRequest(request);
 
-    if (request.hasName()) {
-      String name = request.getName();
-      if (name == null || name.isBlank()) {
-        throw new ValidationException("Product name is required");
-      }
-      if (name.length() < 2 || name.length() > 150) {
-        throw new ValidationException("Product name must be between 2 and 150 characters");
-      }
-      existing.setName(name);
-    }
-
-    if (request.hasDescription()) {
-      String description = request.getDescription();
-      if (description == null || description.isBlank()) {
-        throw new ValidationException("Product description is required");
-      }
-      if (description.length() < 5 || description.length() > 1000) {
-        throw new ValidationException("Product description must be between 5 and 1000 characters");
-      }
-      existing.setDescription(description);
-    }
-
-    if (request.hasPrice()) {
-      BigDecimal price = request.getPrice();
-      if (price == null) {
-        throw new ValidationException("Product price is required");
-      }
-      if (price.compareTo(new BigDecimal("0.01")) < 0) {
-        throw new ValidationException("Product price must be greater than 0");
-      }
-      if (price.scale() > 2) {
-        throw new ValidationException("Product price must have up to 2 decimals");
-      }
-      if (price.precision() - price.scale() > 17) {
-        throw new ValidationException("Product price must have up to 2 decimals");
-      }
-      existing.setPrice(price);
-    }
-
-    if (request.hasCategoryId()) {
-      Long categoryId = request.getCategoryId();
-      if (categoryId == null) {
-        throw new ValidationException("Category id cannot be null");
-      }
-      if (categoryId <= 0) {
-        throw new ValidationException("Category id must be positive");
-      }
-      Category category = categoryService.getById(categoryId);
-      existing.setCategory(category);
-    }
+    applyPatchedName(existing, request);
+    applyPatchedDescription(existing, request);
+    applyPatchedPrice(existing, request);
+    applyPatchedCategory(existing, request);
 
     return toResponse(productRepository.save(existing));
   }
@@ -199,6 +153,85 @@ public class ProductService {
     }
     if (request.hasNoUpdatableFields()) {
       throw new ValidationException("At least one field must be provided");
+    }
+  }
+
+  private void applyPatchedName(Product existing, PatchProductRequest request) {
+    if (!request.hasName()) {
+      return;
+    }
+    String name = request.getName();
+    validatePatchedName(name);
+    existing.setName(name);
+  }
+
+  private void validatePatchedName(String name) {
+    if (name == null || name.isBlank()) {
+      throw new ValidationException("Product name is required");
+    }
+    if (name.length() < 2 || name.length() > 150) {
+      throw new ValidationException("Product name must be between 2 and 150 characters");
+    }
+  }
+
+  private void applyPatchedDescription(Product existing, PatchProductRequest request) {
+    if (!request.hasDescription()) {
+      return;
+    }
+    String description = request.getDescription();
+    validatePatchedDescription(description);
+    existing.setDescription(description);
+  }
+
+  private void validatePatchedDescription(String description) {
+    if (description == null || description.isBlank()) {
+      throw new ValidationException("Product description is required");
+    }
+    if (description.length() < 5 || description.length() > 1000) {
+      throw new ValidationException("Product description must be between 5 and 1000 characters");
+    }
+  }
+
+  private void applyPatchedPrice(Product existing, PatchProductRequest request) {
+    if (!request.hasPrice()) {
+      return;
+    }
+    BigDecimal price = request.getPrice();
+    validatePatchedPrice(price);
+    existing.setPrice(price);
+  }
+
+  private void validatePatchedPrice(BigDecimal price) {
+    if (price == null) {
+      throw new ValidationException("Product price is required");
+    }
+    if (price.compareTo(new BigDecimal("0.01")) < 0) {
+      throw new ValidationException("Product price must be greater than 0");
+    }
+    if (price.scale() > 2) {
+      throw new ValidationException("Product price must have up to 2 decimals");
+    }
+    if (price.precision() - price.scale() > 17) {
+      throw new ValidationException("Product price must have up to 2 decimals");
+    }
+  }
+
+  private void applyPatchedCategory(Product existing, PatchProductRequest request) {
+    if (!request.hasCategoryId()) {
+      return;
+    }
+    Long categoryId = request.getCategoryId();
+    validatePatchedCategoryId(categoryId);
+    Category category = categoryService.getById(categoryId);
+    existing.setCategory(category);
+  }
+
+  private void validatePatchedCategoryId(Long categoryId) {
+    if (categoryId == null) {
+      throw new ValidationException("Category id cannot be null");
+    }
+    if (categoryId <= 0) {
+      throw new ValidationException("Category id must be positive");
     }
   }
 }
