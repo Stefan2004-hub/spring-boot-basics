@@ -7,6 +7,7 @@ import com.interview.demo.exception.ConflictException;
 import com.interview.demo.exception.ResourceNotFoundException;
 import com.interview.demo.exception.ValidationException;
 import com.interview.demo.repository.CategoryRepository;
+import com.interview.demo.repository.projection.CategoryProjection;
 import java.util.List;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,11 @@ public class CategoryService {
   @Transactional(readOnly = true)
   public List<CategoryResponse> getAllCategories() {
     return categoryRepository.findAll().stream().map(this::toResponse).toList();
+  }
+
+  @Transactional(readOnly = true)
+  public List<CategoryProjection> getAllCategoriesDetails() {
+    return categoryRepository.findAllWithProductDetails();
   }
 
   private CategoryResponse toResponse(Category category) {

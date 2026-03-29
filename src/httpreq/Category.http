@@ -1,4 +1,6 @@
 GET http://localhost:8080/categories
+###
+GET http://localhost:8080/categories/details
 
 ###
 POST http://localhost:8080/categories

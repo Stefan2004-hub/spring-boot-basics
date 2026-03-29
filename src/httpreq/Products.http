@@ -4,9 +4,9 @@ POST http://localhost:8080/products
 Content-Type: application/json
 
 {
-  "name": "Product 1",
+  "name": "Product 2",
   "description": "Description of Product 1",
-  "price": 19.99,
+  "price": 20,
   "categoryId": 1
 }
 

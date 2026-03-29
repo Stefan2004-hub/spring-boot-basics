@@ -2,6 +2,7 @@ package com.interview.demo.controller;
 
 import com.interview.demo.dto.CategoryResponse;
 import com.interview.demo.dto.CreateCategoryRequest;
+import com.interview.demo.repository.projection.CategoryProjection;
 import com.interview.demo.service.CategoryService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -27,6 +28,11 @@ public class CategoryController {
   @GetMapping
   public List<CategoryResponse> getAllCategories() {
     return categoryService.getAllCategories();
+  }
+
+  @GetMapping("/details")
+  public List<CategoryProjection> getAllCategoriesDetails() {
+    return categoryService.getAllCategoriesDetails();
   }
 
   @PostMapping
