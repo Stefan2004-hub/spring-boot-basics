@@ -1,19 +1,16 @@
 package com.interview.demo.service;
 
+import com.interview.demo.dto.CategoryProductSummaryResponse;
 import com.interview.demo.dto.CategoryResponse;
 import com.interview.demo.dto.CategoryResponseDetails;
-import com.interview.demo.dto.CategoryProductSummaryResponse;
 import com.interview.demo.dto.CreateCategoryRequest;
 import com.interview.demo.entity.Category;
-import com.interview.demo.entity.Product;
 import com.interview.demo.exception.ConflictException;
 import com.interview.demo.exception.ResourceNotFoundException;
 import com.interview.demo.exception.ValidationException;
 import com.interview.demo.repository.CategoryRepository;
-import com.interview.demo.repository.ProductRepository;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,11 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class CategoryService {
   private final CategoryRepository categoryRepository;
-  private final ProductRepository productRepository;
+  private final ProductManager productManager;
 
-  public CategoryService(CategoryRepository categoryRepository, ProductRepository productRepository) {
+  public CategoryService(CategoryRepository categoryRepository, ProductManager productManager) {
     this.categoryRepository = categoryRepository;
-    this.productRepository = productRepository;
+    this.productManager = productManager;
   }
 
   @Transactional
@@ -65,11 +62,7 @@ public class CategoryService {
 
     List<Long> categoryIds = categories.stream().map(Category::getId).toList();
     Map<Long, List<CategoryProductSummaryResponse>> productsByCategoryId =
-        productRepository.findByCategoryIdsWithCategoryOrdered(categoryIds).stream()
-            .collect(
-                Collectors.groupingBy(
-                    product -> product.getCategory().getId(),
-                    Collectors.mapping(this::toCategoryProductSummaryResponse, Collectors.toList())));
+        productManager.getProductSummaries(categoryIds);
 
     return categories.stream()
         .map(
@@ -83,10 +76,6 @@ public class CategoryService {
 
   private CategoryResponse toResponse(Category category) {
     return new CategoryResponse(category.getId(), category.getName());
-  }
-
-  private CategoryProductSummaryResponse toCategoryProductSummaryResponse(Product product) {
-    return new CategoryProductSummaryResponse(product.getName(), product.getPrice());
   }
 
   @Transactional
