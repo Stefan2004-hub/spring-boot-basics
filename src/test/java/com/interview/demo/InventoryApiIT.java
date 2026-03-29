@@ -87,6 +87,65 @@ class InventoryApiIT extends PostgresContainerTestBase {
   }
 
   @Test
+  void shouldGetCategoryDetailsWithOrderedProductSummaries() throws Exception {
+    Category electronics = categoryRepository.save(new Category(null, "Electronics"));
+    Category books = categoryRepository.save(new Category(null, "Books"));
+
+    Product zeta = product("Zeta Mouse", new BigDecimal("49.99"));
+    zeta.setCategory(electronics);
+    productRepository.save(zeta);
+    Product alpha = product("Alpha Keyboard", new BigDecimal("99.99"));
+    alpha.setCategory(electronics);
+    productRepository.save(alpha);
+
+    mockMvc
+        .perform(get("/categories/details"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(2))
+        .andExpect(jsonPath("$[0].id").value(electronics.getId()))
+        .andExpect(jsonPath("$[0].name").value("Electronics"))
+        .andExpect(jsonPath("$[0].products.length()").value(2))
+        .andExpect(jsonPath("$[0].products[0].name").value("Alpha Keyboard"))
+        .andExpect(jsonPath("$[0].products[0].price").value(99.99))
+        .andExpect(jsonPath("$[0].products[0].description").doesNotExist())
+        .andExpect(jsonPath("$[0].products[1].name").value("Zeta Mouse"))
+        .andExpect(jsonPath("$[1].id").value(books.getId()))
+        .andExpect(jsonPath("$[1].name").value("Books"))
+        .andExpect(jsonPath("$[1].products.length()").value(0));
+  }
+
+  @Test
+  void shouldReturnPagedCategoryDetailsUsingOneBasedPageParameter() throws Exception {
+    categoryRepository.save(new Category(null, "Electronics"));
+    categoryRepository.save(new Category(null, "Books"));
+    Category office = categoryRepository.save(new Category(null, "Office"));
+
+    mockMvc
+        .perform(get("/categories/details").param("page", "2").param("size", "2"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(1))
+        .andExpect(jsonPath("$[0].id").value(office.getId()))
+        .andExpect(jsonPath("$[0].name").value("Office"))
+        .andExpect(jsonPath("$[0].products.length()").value(0));
+  }
+
+  @Test
+  void shouldReturnBadRequestForInvalidCategoryDetailsPage() throws Exception {
+    mockMvc
+        .perform(get("/categories/details").param("page", "0"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("page must be at least 1"));
+  }
+
+  @Test
+  void shouldReturnBadRequestForInvalidCategoryDetailsSize() throws Exception {
+    mockMvc
+        .perform(get("/categories/details").param("size", "101"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("size must be between 1 and 100"));
+  }
+
+  @Test
   void shouldCreateProductAndFindByCategoryName() throws Exception {
     Category category = categoryRepository.save(new Category(null, "Electronics"));
 
