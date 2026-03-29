@@ -1,8 +1,8 @@
 package com.interview.demo.controller;
 
 import com.interview.demo.dto.CategoryResponse;
+import com.interview.demo.dto.CategoryResponseDetails;
 import com.interview.demo.dto.CreateCategoryRequest;
-import com.interview.demo.repository.projection.CategoryProjection;
 import com.interview.demo.service.CategoryService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -31,8 +32,9 @@ public class CategoryController {
   }
 
   @GetMapping("/details")
-  public List<CategoryProjection> getAllCategoriesDetails() {
-    return categoryService.getAllCategoriesDetails();
+  public List<CategoryResponseDetails> getAllCategoriesDetails(
+      @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
+    return categoryService.getAllCategoriesDetails(page, size);
   }
 
   @PostMapping

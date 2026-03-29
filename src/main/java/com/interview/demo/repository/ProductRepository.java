@@ -12,5 +12,15 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
   @Query("select p from Product p join p.category c where lower(c.name) = lower(:categoryName)")
   List<Product> findByCategoryName(@Param("categoryName") String categoryName);
 
+  @Query(
+      """
+      select p
+      from Product p
+      join fetch p.category c
+      where c.id in :categoryIds
+      order by c.id asc, p.name asc, p.id asc
+      """)
+  List<Product> findByCategoryIdsWithCategoryOrdered(@Param("categoryIds") List<Long> categoryIds);
+
   List<ProductSummary> findAllProjectedBy();
 }
