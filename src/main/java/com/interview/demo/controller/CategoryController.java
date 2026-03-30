@@ -3,7 +3,7 @@ package com.interview.demo.controller;
 import com.interview.demo.dto.CategoryResponse;
 import com.interview.demo.dto.CategoryResponseDetails;
 import com.interview.demo.dto.CreateCategoryRequest;
-import com.interview.demo.service.CategoryService;
+import com.interview.demo.service.CategoryServiceContract;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
@@ -20,9 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/categories")
 public class CategoryController {
-  private final CategoryService categoryService;
+  private final CategoryServiceContract categoryService;
 
-  public CategoryController(CategoryService categoryService) {
+  public CategoryController(CategoryServiceContract categoryService) {
     this.categoryService = categoryService;
   }
 

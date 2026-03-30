@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ProductManager {
+public class ProductManager implements ProductManagerContract {
   private final ProductRepository productRepository;
 
   public ProductManager(ProductRepository productRepository) {

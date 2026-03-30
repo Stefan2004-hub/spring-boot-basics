@@ -4,7 +4,7 @@ import com.interview.demo.dto.ProductDTO;
 import com.interview.demo.dto.ProductResponse;
 import com.interview.demo.dto.PatchProductRequest;
 import com.interview.demo.repository.projection.ProductSummary;
-import com.interview.demo.service.ProductService;
+import com.interview.demo.service.ProductServiceContract;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.List;
@@ -24,9 +24,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/products")
 public class ProductController {
-  private final ProductService productService;
+  private final ProductServiceContract productService;
 
-  public ProductController(ProductService productService) {
+  public ProductController(ProductServiceContract productService) {
     this.productService = productService;
   }
 

@@ -4,7 +4,7 @@ import com.interview.demo.dto.order.CreateOrderRequest;
 import com.interview.demo.dto.order.OrderItemResponse;
 import com.interview.demo.dto.order.OrderResponse;
 import com.interview.demo.dto.order.UpdateOrderStatusRequest;
-import com.interview.demo.service.OrderService;
+import com.interview.demo.service.OrderServiceContract;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
@@ -20,9 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/orders")
 public class OrderController {
-  private final OrderService orderService;
+  private final OrderServiceContract orderService;
 
-  public OrderController(OrderService orderService) {
+  public OrderController(OrderServiceContract orderService) {
     this.orderService = orderService;
   }
 

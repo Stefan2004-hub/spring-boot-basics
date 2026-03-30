@@ -19,11 +19,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class CategoryService {
+public class CategoryService implements CategoryServiceContract {
   private final CategoryRepository categoryRepository;
-  private final ProductManager productManager;
+  private final ProductManagerContract productManager;
 
-  public CategoryService(CategoryRepository categoryRepository, ProductManager productManager) {
+  public CategoryService(
+      CategoryRepository categoryRepository, ProductManagerContract productManager) {
     this.categoryRepository = categoryRepository;
     this.productManager = productManager;
   }

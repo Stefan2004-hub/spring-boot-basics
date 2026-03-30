@@ -19,11 +19,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class OrderService {
+public class OrderService implements OrderServiceContract {
   private final OrderRepository orderRepository;
-  private final ProductService productService;
+  private final ProductServiceContract productService;
 
-  public OrderService(OrderRepository orderRepository, ProductService productService) {
+  public OrderService(OrderRepository orderRepository, ProductServiceContract productService) {
     this.orderRepository = orderRepository;
     this.productService = productService;
   }

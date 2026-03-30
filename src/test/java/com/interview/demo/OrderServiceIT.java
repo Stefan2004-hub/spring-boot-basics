@@ -10,7 +10,7 @@ import com.interview.demo.entity.Product;
 import com.interview.demo.exception.ResourceNotFoundException;
 import com.interview.demo.repository.OrderRepository;
 import com.interview.demo.repository.ProductRepository;
-import com.interview.demo.service.OrderService;
+import com.interview.demo.service.OrderServiceContract;
 import com.interview.demo.support.PostgresContainerTestBase;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -23,7 +23,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 @SpringBootTest
 class OrderServiceIT extends PostgresContainerTestBase {
-  @Autowired private OrderService orderService;
+  @Autowired private OrderServiceContract orderService;
   @Autowired private OrderRepository orderRepository;
   @Autowired private ProductRepository productRepository;
   @Autowired private JdbcTemplate jdbcTemplate;
