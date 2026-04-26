@@ -46,6 +46,11 @@ public class CategoryService implements CategoryServiceContract {
   }
 
   @Transactional(readOnly = true)
+  public CategoryResponse getCategoryById(Long id) {
+    return toResponse(getById(id));
+  }
+
+  @Transactional(readOnly = true)
   public List<CategoryResponseDetails> getAllCategoriesDetails(int page, int size) {
     if (page < 1) {
       throw new ValidationException("page must be at least 1");

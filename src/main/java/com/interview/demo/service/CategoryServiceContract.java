@@ -11,6 +11,8 @@ public interface CategoryServiceContract {
 
   List<CategoryResponse> getAllCategories();
 
+  CategoryResponse getCategoryById(Long id);
+
   List<CategoryResponseDetails> getAllCategoriesDetails(int page, int size);
 
   CategoryResponse updateCategory(Long id, CreateCategoryRequest request);

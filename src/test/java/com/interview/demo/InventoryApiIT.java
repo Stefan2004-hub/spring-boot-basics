@@ -61,7 +61,10 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").exists())
         .andExpect(jsonPath("$.name").value("Electronics"))
-        .andExpect(jsonPath("$.products").doesNotExist());
+        .andExpect(jsonPath("$.products").doesNotExist())
+        .andExpect(jsonPath("$._links.self.href").exists())
+        .andExpect(jsonPath("$._links.categories.href").exists())
+        .andExpect(jsonPath("$._links.products.href").exists());
 
     mockMvc
         .perform(
@@ -80,10 +83,12 @@ class InventoryApiIT extends PostgresContainerTestBase {
     mockMvc
         .perform(get("/categories"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(2))
-        .andExpect(jsonPath("$[0].id").exists())
-        .andExpect(jsonPath("$[0].name").exists())
-        .andExpect(jsonPath("$[0].products").doesNotExist());
+        .andExpect(jsonPath("$._links.self.href").exists())
+        .andExpect(jsonPath("$._embedded.categoryResponseList.length()").value(2))
+        .andExpect(jsonPath("$._embedded.categoryResponseList[0].id").exists())
+        .andExpect(jsonPath("$._embedded.categoryResponseList[0].name").exists())
+        .andExpect(jsonPath("$._embedded.categoryResponseList[0].products").doesNotExist())
+        .andExpect(jsonPath("$._embedded.categoryResponseList[0]._links.self.href").exists());
   }
 
   @Test
@@ -101,17 +106,18 @@ class InventoryApiIT extends PostgresContainerTestBase {
     mockMvc
         .perform(get("/categories/details"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(2))
-        .andExpect(jsonPath("$[0].id").value(electronics.getId()))
-        .andExpect(jsonPath("$[0].name").value("Electronics"))
-        .andExpect(jsonPath("$[0].products.length()").value(2))
-        .andExpect(jsonPath("$[0].products[0].name").value("Alpha Keyboard"))
-        .andExpect(jsonPath("$[0].products[0].price").value(99.99))
-        .andExpect(jsonPath("$[0].products[0].description").doesNotExist())
-        .andExpect(jsonPath("$[0].products[1].name").value("Zeta Mouse"))
-        .andExpect(jsonPath("$[1].id").value(books.getId()))
-        .andExpect(jsonPath("$[1].name").value("Books"))
-        .andExpect(jsonPath("$[1].products.length()").value(0));
+        .andExpect(jsonPath("$._links.self.href").exists())
+        .andExpect(jsonPath("$._embedded.categoryResponseDetailsList.length()").value(2))
+        .andExpect(jsonPath("$._embedded.categoryResponseDetailsList[0].id").value(electronics.getId()))
+        .andExpect(jsonPath("$._embedded.categoryResponseDetailsList[0].name").value("Electronics"))
+        .andExpect(jsonPath("$._embedded.categoryResponseDetailsList[0].products.length()").value(2))
+        .andExpect(jsonPath("$._embedded.categoryResponseDetailsList[0].products[0].name").value("Alpha Keyboard"))
+        .andExpect(jsonPath("$._embedded.categoryResponseDetailsList[0].products[0].price").value(99.99))
+        .andExpect(jsonPath("$._embedded.categoryResponseDetailsList[0].products[0].description").doesNotExist())
+        .andExpect(jsonPath("$._embedded.categoryResponseDetailsList[0].products[1].name").value("Zeta Mouse"))
+        .andExpect(jsonPath("$._embedded.categoryResponseDetailsList[1].id").value(books.getId()))
+        .andExpect(jsonPath("$._embedded.categoryResponseDetailsList[1].name").value("Books"))
+        .andExpect(jsonPath("$._embedded.categoryResponseDetailsList[1].products.length()").value(0));
   }
 
   @Test
@@ -123,10 +129,11 @@ class InventoryApiIT extends PostgresContainerTestBase {
     mockMvc
         .perform(get("/categories/details").param("page", "2").param("size", "2"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(1))
-        .andExpect(jsonPath("$[0].id").value(office.getId()))
-        .andExpect(jsonPath("$[0].name").value("Office"))
-        .andExpect(jsonPath("$[0].products.length()").value(0));
+        .andExpect(jsonPath("$._links.self.href").exists())
+        .andExpect(jsonPath("$._embedded.categoryResponseDetailsList.length()").value(1))
+        .andExpect(jsonPath("$._embedded.categoryResponseDetailsList[0].id").value(office.getId()))
+        .andExpect(jsonPath("$._embedded.categoryResponseDetailsList[0].name").value("Office"))
+        .andExpect(jsonPath("$._embedded.categoryResponseDetailsList[0].products.length()").value(0));
   }
 
   @Test
@@ -161,12 +168,16 @@ class InventoryApiIT extends PostgresContainerTestBase {
                             new BigDecimal("1999.99"),
                             category.getId()))))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.name").value("Laptop Pro"));
+        .andExpect(jsonPath("$.name").value("Laptop Pro"))
+        .andExpect(jsonPath("$._links.self.href").exists())
+        .andExpect(jsonPath("$._links.category.href").exists());
 
     mockMvc
         .perform(get("/products/by-category/Electronics"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].name").value("Laptop Pro"));
+        .andExpect(jsonPath("$._links.self.href").exists())
+        .andExpect(jsonPath("$._embedded.productResponseList[0].name").value("Laptop Pro"))
+        .andExpect(jsonPath("$._embedded.productResponseList[0]._links.self.href").exists());
   }
 
   @Test
@@ -182,11 +193,13 @@ class InventoryApiIT extends PostgresContainerTestBase {
                 .param("minPrice", "1000")
                 .param("maxPrice", "1700"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content.length()").value(1))
-        .andExpect(jsonPath("$.content[0].name").value("Gaming Laptop"))
-        .andExpect(jsonPath("$.number").value(0))
-        .andExpect(jsonPath("$.size").value(20))
-        .andExpect(jsonPath("$.totalElements").value(1));
+        .andExpect(jsonPath("$._links.self.href").exists())
+        .andExpect(jsonPath("$._embedded.productResponseList.length()").value(1))
+        .andExpect(jsonPath("$._embedded.productResponseList[0].name").value("Gaming Laptop"))
+        .andExpect(jsonPath("$.page.number").value(0))
+        .andExpect(jsonPath("$.page.size").value(20))
+        .andExpect(jsonPath("$.page.totalElements").value(1))
+        .andExpect(jsonPath("$._embedded.productResponseList[0]._links.self.href").exists());
   }
 
   @Test
@@ -198,11 +211,11 @@ class InventoryApiIT extends PostgresContainerTestBase {
     mockMvc
         .perform(get("/products/search").param("name", "laptop"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content.length()").value(20))
-        .andExpect(jsonPath("$.number").value(0))
-        .andExpect(jsonPath("$.size").value(20))
-        .andExpect(jsonPath("$.totalElements").value(25))
-        .andExpect(jsonPath("$.totalPages").value(2));
+        .andExpect(jsonPath("$._embedded.productResponseList.length()").value(20))
+        .andExpect(jsonPath("$.page.number").value(0))
+        .andExpect(jsonPath("$.page.size").value(20))
+        .andExpect(jsonPath("$.page.totalElements").value(25))
+        .andExpect(jsonPath("$.page.totalPages").value(2));
   }
 
   @Test
@@ -214,12 +227,12 @@ class InventoryApiIT extends PostgresContainerTestBase {
     mockMvc
         .perform(get("/products/search").param("name", "laptop").param("page", "2").param("size", "2"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content.length()").value(1))
-        .andExpect(jsonPath("$.content[0].name").value("Laptop 3"))
-        .andExpect(jsonPath("$.number").value(1))
-        .andExpect(jsonPath("$.size").value(2))
-        .andExpect(jsonPath("$.totalElements").value(3))
-        .andExpect(jsonPath("$.totalPages").value(2));
+        .andExpect(jsonPath("$._embedded.productResponseList.length()").value(1))
+        .andExpect(jsonPath("$._embedded.productResponseList[0].name").value("Laptop 3"))
+        .andExpect(jsonPath("$.page.number").value(1))
+        .andExpect(jsonPath("$.page.size").value(2))
+        .andExpect(jsonPath("$.page.totalElements").value(3))
+        .andExpect(jsonPath("$.page.totalPages").value(2));
   }
 
   @Test
@@ -245,9 +258,10 @@ class InventoryApiIT extends PostgresContainerTestBase {
     mockMvc
         .perform(get("/products/summaries"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].name").value("Monitor"))
-        .andExpect(jsonPath("$[0].price").value(299.99))
-        .andExpect(jsonPath("$[0].description").doesNotExist());
+        .andExpect(jsonPath("$._links.self.href").exists())
+        .andExpect(jsonPath("$._embedded.productSummaryResponseList[0].name").value("Monitor"))
+        .andExpect(jsonPath("$._embedded.productSummaryResponseList[0].price").value(299.99))
+        .andExpect(jsonPath("$._embedded.productSummaryResponseList[0].description").doesNotExist());
   }
 
   @Test
@@ -273,7 +287,12 @@ class InventoryApiIT extends PostgresContainerTestBase {
             jsonPath("$.createdAt")
                 .value(org.hamcrest.Matchers.matchesRegex("\\d{4}-\\d{2}-\\d{2}")))
         .andExpect(jsonPath("$.items.length()").value(2))
-        .andExpect(jsonPath("$.items[0].order").doesNotExist());
+        .andExpect(jsonPath("$.items[0].order").doesNotExist())
+        .andExpect(jsonPath("$._links.self.href").exists())
+        .andExpect(jsonPath("$._links.orders.href").exists())
+        .andExpect(jsonPath("$._links.items.href").exists())
+        .andExpect(jsonPath("$._links.confirm.href").exists())
+        .andExpect(jsonPath("$._links.cancel.href").exists());
   }
 
   @Test
@@ -302,13 +321,16 @@ class InventoryApiIT extends PostgresContainerTestBase {
     mockMvc
         .perform(get("/orders/{id}/items", orderId))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(2))
-        .andExpect(jsonPath("$[0].id").exists())
-        .andExpect(jsonPath("$[0].productId").exists())
-        .andExpect(jsonPath("$[0].productName").exists())
-        .andExpect(jsonPath("$[0].quantity").exists())
-        .andExpect(jsonPath("$[0].unitPrice").exists())
-        .andExpect(jsonPath("$[0].lineTotal").exists());
+        .andExpect(jsonPath("$._links.self.href").exists())
+        .andExpect(jsonPath("$._embedded.orderItemResponseList.length()").value(2))
+        .andExpect(jsonPath("$._embedded.orderItemResponseList[0].id").exists())
+        .andExpect(jsonPath("$._embedded.orderItemResponseList[0].productId").exists())
+        .andExpect(jsonPath("$._embedded.orderItemResponseList[0].productName").exists())
+        .andExpect(jsonPath("$._embedded.orderItemResponseList[0].quantity").exists())
+        .andExpect(jsonPath("$._embedded.orderItemResponseList[0].unitPrice").exists())
+        .andExpect(jsonPath("$._embedded.orderItemResponseList[0].lineTotal").exists())
+        .andExpect(jsonPath("$._embedded.orderItemResponseList[0]._links.product.href").exists())
+        .andExpect(jsonPath("$._embedded.orderItemResponseList[0]._links.order.href").exists());
   }
 
   @Test
@@ -388,7 +410,8 @@ class InventoryApiIT extends PostgresContainerTestBase {
                 .content(json(new CreateCategoryRequest("Audio"))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(category.getId()))
-        .andExpect(jsonPath("$.name").value("Audio"));
+        .andExpect(jsonPath("$.name").value("Audio"))
+        .andExpect(jsonPath("$._links.self.href").exists());
   }
 
   @Test
@@ -403,7 +426,8 @@ class InventoryApiIT extends PostgresContainerTestBase {
     mockMvc
         .perform(get("/categories"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(0));
+        .andExpect(jsonPath("$._links.self.href").exists())
+        .andExpect(jsonPath("$._embedded").doesNotExist());
   }
 
   @Test
@@ -446,7 +470,9 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .andExpect(jsonPath("$.name").value("Gaming Mouse"))
         .andExpect(jsonPath("$.price").value(49.99))
         .andExpect(jsonPath("$.categoryId").value(newCategory.getId()))
-        .andExpect(jsonPath("$.categoryName").value("Accessories"));
+        .andExpect(jsonPath("$.categoryName").value("Accessories"))
+        .andExpect(jsonPath("$._links.self.href").exists())
+        .andExpect(jsonPath("$._links.category.href").exists());
   }
 
   @Test
@@ -464,7 +490,8 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .andExpect(jsonPath("$.id").value(product.getId()))
         .andExpect(jsonPath("$.name").value("Gaming Mouse"))
         .andExpect(jsonPath("$.description").value("Mouse description"))
-        .andExpect(jsonPath("$.price").value(20.00));
+        .andExpect(jsonPath("$.price").value(20.00))
+        .andExpect(jsonPath("$._links.self.href").exists());
   }
 
   @Test
@@ -486,7 +513,9 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(product.getId()))
         .andExpect(jsonPath("$.categoryId").value(newCategory.getId()))
-        .andExpect(jsonPath("$.categoryName").value("Accessories"));
+        .andExpect(jsonPath("$.categoryName").value("Accessories"))
+        .andExpect(jsonPath("$._links.self.href").exists())
+        .andExpect(jsonPath("$._links.category.href").exists());
   }
 
   @Test
@@ -598,7 +627,10 @@ class InventoryApiIT extends PostgresContainerTestBase {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(orderId))
         .andExpect(jsonPath("$.status").value("CONFIRMED"))
-        .andExpect(jsonPath("$.totalAmount").value(200.00));
+        .andExpect(jsonPath("$.totalAmount").value(200.00))
+        .andExpect(jsonPath("$._links.self.href").exists())
+        .andExpect(jsonPath("$._links.confirm").doesNotExist())
+        .andExpect(jsonPath("$._links.cancel").doesNotExist());
   }
 
   @Test

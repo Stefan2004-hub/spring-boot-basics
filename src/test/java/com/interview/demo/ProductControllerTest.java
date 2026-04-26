@@ -43,11 +43,16 @@ class ProductControllerTest extends PostgresContainerTestBase {
         .andExpect(jsonPath("$.id").exists())
         .andExpect(jsonPath("$.name").value("Test Product"))
         .andExpect(jsonPath("$.description").value("This is a test product"))
-        .andExpect(jsonPath("$.price").value(9.99));
+        .andExpect(jsonPath("$.price").value(9.99))
+        .andExpect(jsonPath("$._links.self.href").exists())
+        .andExpect(jsonPath("$._links.products.href").exists());
   }
 
   @Test
   void shouldGetAllProducts() throws Exception {
-    mockMvc.perform(get("/products")).andExpect(status().isOk());
+    mockMvc
+        .perform(get("/products"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$._links.self.href").exists());
   }
 }
