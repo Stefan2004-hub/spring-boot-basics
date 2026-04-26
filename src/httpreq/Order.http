@@ -1,3 +1,10 @@
+### HAL collection response with `_embedded`; CREATED orders include `confirm` and `cancel` links
+GET http://localhost:8080/orders
+
+###
+GET http://localhost:8080/orders/1
+
+###
 POST http://localhost:8080/orders
 Content-Type: application/json
 
@@ -15,6 +22,14 @@ Content-Type: application/json
 
 {
   "status": "CONFIRMED"
+}
+
+###
+PUT http://localhost:8080/orders/1
+Content-Type: application/json
+
+{
+  "status": "CANCELLED"
 }
 
 ###

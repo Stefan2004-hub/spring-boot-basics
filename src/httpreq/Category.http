@@ -1,6 +1,10 @@
+### HAL collection response with `_embedded` and collection/item `_links`
 GET http://localhost:8080/categories
 ###
-GET http://localhost:8080/categories/details
+GET http://localhost:8080/categories/1
+
+###
+GET http://localhost:8080/categories/details?page=1&size=20
 
 ###
 POST http://localhost:8080/categories
