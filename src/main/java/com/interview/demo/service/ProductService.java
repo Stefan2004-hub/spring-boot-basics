@@ -3,6 +3,7 @@ package com.interview.demo.service;
 import com.interview.demo.dto.ProductDTO;
 import com.interview.demo.dto.PatchProductRequest;
 import com.interview.demo.dto.ProductResponse;
+import com.interview.demo.dto.ProductSummaryResponse;
 import com.interview.demo.entity.Category;
 import com.interview.demo.entity.Product;
 import com.interview.demo.exception.ConflictException;
@@ -13,7 +14,6 @@ import com.interview.demo.repository.projection.ProductSummary;
 import com.interview.demo.repository.specification.ProductSpecifications;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -40,8 +40,8 @@ public class ProductService implements ProductServiceContract {
   }
 
   @Transactional(readOnly = true)
-  public Optional<ProductResponse> getProductById(Long id) {
-    return productRepository.findById(id).map(this::toResponse);
+  public ProductResponse getProductById(Long id) {
+    return toResponse(getById(id));
   }
 
   @Transactional
@@ -82,8 +82,8 @@ public class ProductService implements ProductServiceContract {
     return productRepository.findAll(spec, pageable).map(this::toResponse);
   }
 
-  public List<ProductSummary> getProductSummaries() {
-    return productRepository.findAllProjectedBy();
+  public List<ProductSummaryResponse> getProductSummaries() {
+    return productRepository.findAllProjectedBy().stream().map(this::toSummaryResponse).toList();
   }
 
   @Transactional
@@ -136,6 +136,10 @@ public class ProductService implements ProductServiceContract {
         product.getPrice(),
         categoryId,
         categoryName);
+  }
+
+  private ProductSummaryResponse toSummaryResponse(ProductSummary summary) {
+    return new ProductSummaryResponse(summary.getName(), summary.getPrice());
   }
 
   public Product getById(Long productId) {

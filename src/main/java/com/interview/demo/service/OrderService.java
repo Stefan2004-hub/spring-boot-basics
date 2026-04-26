@@ -28,6 +28,16 @@ public class OrderService implements OrderServiceContract {
     this.productService = productService;
   }
 
+  @Transactional(readOnly = true)
+  public List<OrderResponse> getAllOrders() {
+    return orderRepository.findAll().stream().map(this::toResponse).toList();
+  }
+
+  @Transactional(readOnly = true)
+  public OrderResponse getOrderById(Long orderId) {
+    return toResponse(getById(orderId));
+  }
+
   @Transactional
   public OrderResponse createOrder(CreateOrderRequest request) {
     if (request.items() == null || request.items().isEmpty()) {
