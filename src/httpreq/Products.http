@@ -1,4 +1,8 @@
+### HAL collection response with `_embedded`; item responses include `_links`
 GET http://localhost:8080/products
+###
+GET http://localhost:8080/products/1
+
 ###
 POST http://localhost:8080/products
 Content-Type: application/json
@@ -39,4 +43,5 @@ GET http://localhost:8080/products/by-category/Electronics
 GET http://localhost:8080/products/search?name=prod&minPrice=10&maxPrice=100&page=1&size=20
 
 ###
+### HAL summaries are embedded under `_embedded.productSummaryResponseList`
 GET http://localhost:8080/products/summaries
