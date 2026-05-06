@@ -6,6 +6,7 @@ import com.interview.demo.dto.ProductSummaryResponse;
 import com.interview.demo.dto.PatchProductRequest;
 import com.interview.demo.hateoas.ProductModelAssembler;
 import com.interview.demo.service.ProductServiceContract;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,9 +27,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/products")
+@Tag(name = "Products", description = "Operations related to product management")
 public class ProductController {
   private final ProductServiceContract productService;
   private final ProductModelAssembler productAssembler;
@@ -40,6 +46,10 @@ public class ProductController {
   }
 
   @GetMapping
+  @Operation(summary = "Get all products", description = "Retrieve a list of all available products")
+  @ApiResponse(responseCode = "200", description = "Successfully retrieved products",
+      content = @Content(mediaType = "application/json",
+          schema = @Schema(implementation = CollectionModel.class)))
   public CollectionModel<EntityModel<ProductResponse>> getAllProducts() {
     List<EntityModel<ProductResponse>> products =
         productService.getAllProducts().stream().map(productAssembler::toModel).toList();
@@ -50,6 +60,11 @@ public class ProductController {
   }
 
   @GetMapping("/{id}")
+  @Operation(summary = "Get product by ID", description = "Retrieve a specific product by its ID")
+  @ApiResponse(responseCode = "200", description = "Successfully retrieved product",
+      content = @Content(mediaType = "application/json",
+          schema = @Schema(implementation = EntityModel.class)))
+  @ApiResponse(responseCode = "404", description = "Product not found")
   public EntityModel<ProductResponse> getProductById(@PathVariable Long id) {
     return productAssembler.toModel(productService.getProductById(id));
   }
@@ -89,11 +104,22 @@ public class ProductController {
   }
 
   @PostMapping
+  @Operation(summary = "Create product", description = "Create a new product")
+  @ApiResponse(responseCode = "201", description = "Product created successfully",
+      content = @Content(mediaType = "application/json",
+          schema = @Schema(implementation = EntityModel.class)))
+  @ApiResponse(responseCode = "400", description = "Invalid product data")
   public EntityModel<ProductResponse> createProduct(@Valid @RequestBody ProductDTO product) {
     return productAssembler.toModel(productService.saveProduct(product));
   }
 
   @PutMapping("/{id}")
+  @Operation(summary = "Update product", description = "Update an existing product by ID")
+  @ApiResponse(responseCode = "200", description = "Product updated successfully",
+      content = @Content(mediaType = "application/json",
+          schema = @Schema(implementation = EntityModel.class)))
+  @ApiResponse(responseCode = "400", description = "Invalid product data")
+  @ApiResponse(responseCode = "404", description = "Product not found")
   public EntityModel<ProductResponse> updateProduct(
       @PathVariable Long id, @Valid @RequestBody ProductDTO product) {
     return productAssembler.toModel(productService.updateProduct(id, product));
@@ -106,6 +132,9 @@ public class ProductController {
   }
 
   @DeleteMapping("/{id}")
+  @Operation(summary = "Delete product", description = "Delete a product by ID")
+  @ApiResponse(responseCode = "200", description = "Product deleted successfully")
+  @ApiResponse(responseCode = "404", description = "Product not found")
   public Map<String, String> deleteProduct(@PathVariable Long id) {
     productService.deleteProduct(id);
     return Map.of("message", "Product deleted successfully");
