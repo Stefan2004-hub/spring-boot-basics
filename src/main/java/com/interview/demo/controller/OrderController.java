@@ -6,6 +6,7 @@ import com.interview.demo.dto.order.OrderResponse;
 import com.interview.demo.dto.order.UpdateOrderStatusRequest;
 import com.interview.demo.hateoas.OrderModelAssembler;
 import com.interview.demo.service.OrderServiceContract;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
@@ -20,9 +21,14 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/orders")
+@Tag(name = "Orders", description = "Operations related to order management")
 public class OrderController {
   private final OrderServiceContract orderService;
   private final OrderModelAssembler orderAssembler;
@@ -33,6 +39,10 @@ public class OrderController {
   }
 
   @GetMapping
+  @Operation(summary = "Get all orders", description = "Retrieve a list of all orders")
+  @ApiResponse(responseCode = "200", description = "Successfully retrieved orders",
+      content = @Content(mediaType = "application/json",
+          schema = @Schema(implementation = CollectionModel.class)))
   public CollectionModel<EntityModel<OrderResponse>> getAllOrders() {
     List<EntityModel<OrderResponse>> orders =
         orderService.getAllOrders().stream().map(orderAssembler::toModel).toList();
@@ -43,11 +53,21 @@ public class OrderController {
   }
 
   @GetMapping("/{id}")
+  @Operation(summary = "Get order by ID", description = "Retrieve a specific order by its ID")
+  @ApiResponse(responseCode = "200", description = "Successfully retrieved order",
+      content = @Content(mediaType = "application/json",
+          schema = @Schema(implementation = EntityModel.class)))
+  @ApiResponse(responseCode = "404", description = "Order not found")
   public EntityModel<OrderResponse> getOrderById(@PathVariable Long id) {
     return orderAssembler.toModel(orderService.getOrderById(id));
   }
 
   @PostMapping
+  @Operation(summary = "Create order", description = "Create a new order")
+  @ApiResponse(responseCode = "201", description = "Order created successfully",
+      content = @Content(mediaType = "application/json",
+          schema = @Schema(implementation = EntityModel.class)))
+  @ApiResponse(responseCode = "400", description = "Invalid order data")
   public EntityModel<OrderResponse> createOrder(@Valid @RequestBody CreateOrderRequest request) {
     return orderAssembler.toModel(orderService.createOrder(request));
   }
@@ -72,6 +92,9 @@ public class OrderController {
   }
 
   @DeleteMapping("/{id}")
+  @Operation(summary = "Delete order", description = "Delete an order by ID")
+  @ApiResponse(responseCode = "200", description = "Order deleted successfully")
+  @ApiResponse(responseCode = "404", description = "Order not found")
   public Map<String, String> deleteOrder(@PathVariable Long id) {
     orderService.deleteOrder(id);
     return Map.of("message", "Order deleted successfully");
